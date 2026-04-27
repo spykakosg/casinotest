@@ -248,7 +248,7 @@ export default function SlotsPage() {
                       <p className={`text-2xl font-black ${winAnim ? "text-gold animate-pulse" : "text-green-400"}`}>
                         WIN! {result.multiplier}x
                       </p>
-                      <p className="text-green-400 font-mono text-sm">+{result.profit.toFixed(2)}</p>
+                      <p className="text-green-400 font-mono text-sm">+{result.profit < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}</p>
                       {result.matchCount && (
                         <p className="text-xs text-casino-muted mt-1">{result.matchCount}-of-a-kind!</p>
                       )}
@@ -304,7 +304,7 @@ export default function SlotsPage() {
                   { e: "\ud83c\udfa8", p3: "5x", p4: "15x", p5: "50x" },
                   { e: "\ud83d\udd14", p3: "3x", p4: "8x", p5: "25x" },
                   { e: "\ud83c\udf52", p3: "2x", p4: "4x", p5: "10x" },
-                  { e: "\ud83c\udf4b", p3: "1x", p4: "2x", p5: "5x" },
+                  { e: "\ud83c\udf4b", p3: "1.5x", p4: "2x", p5: "5x" },
                 ].map((p, i) => (
                   <div key={i} className="grid grid-cols-4 gap-1 text-xs">
                     <span className="text-lg">{p.e}</span>

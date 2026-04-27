@@ -38,16 +38,18 @@ export default function BetHistory({ history, bets, title, currency, onLoadMore 
 }
 
 function BetRow({ bet }) {
-  const won = bet.won;
   const amount = parseFloat(bet.betAmount ?? bet.bet_amount);
-  const payout = parseFloat(bet.payout);
+  const payout = parseFloat(bet.payout || 0);
+  const profit = bet.profit !== undefined && bet.profit !== null ? parseFloat(bet.profit) : payout - amount;
   const roll = typeof bet.roll === "number" ? bet.roll : parseFloat(bet.roll);
+  const isPush = Math.abs(profit) < 0.001;
+  const isWin = profit > 0.001;
   return (
     <div className={`px-4 py-3 flex items-center gap-3 hover:bg-casino-surface/50 transition-colors ${
-      won ? "border-l-2 border-green-500/40" : "border-l-2 border-red-500/20"
+      isWin ? "border-l-2 border-green-500/40" : isPush ? "border-l-2 border-yellow-500/30" : "border-l-2 border-red-500/20"
     }`}>
       {/* Roll */}
-      <div className={`font-mono font-bold text-sm w-12 shrink-0 ${won ? "text-green-400" : "text-red-400"}`}>
+      <div className={`font-mono font-bold text-sm w-12 shrink-0 ${isWin ? "text-green-400" : isPush ? "text-yellow-400" : "text-red-400"}`}>
         {!isNaN(roll) ? roll.toFixed(2) : "—"}
       </div>
 
@@ -57,15 +59,15 @@ function BetRow({ bet }) {
           {bet.direction} {bet.target} · {bet.multiplier}×
         </div>
         <div className="text-xs text-casino-muted/60 font-mono">
-          {amount.toFixed(2)} → {won ? payout.toFixed(2) : "0.00"}
+          {amount.toFixed(2)} → {payout.toFixed(2)}
         </div>
       </div>
 
       {/* Profit */}
       <div className={`text-xs font-mono font-semibold shrink-0 ${
-        won ? "text-green-400" : "text-red-400"
+        isWin ? "text-green-400" : isPush ? "text-yellow-400" : "text-red-400"
       }`}>
-        {won ? `+${(payout - amount).toFixed(2)}` : `-${amount.toFixed(2)}`}
+        {isPush ? "0.00" : isWin ? `+${profit.toFixed(2)}` : profit.toFixed(2)}
       </div>
     </div>
   );

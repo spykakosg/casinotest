@@ -22,7 +22,7 @@ const SYMBOLS = [
   { name: "bar",    emoji: "BAR", weight: 4,  pay5: 50,  pay4: 15, pay3: 5 },
   { name: "bell",   emoji: "BEL", weight: 6,  pay5: 25,  pay4: 8,  pay3: 3 },
   { name: "cherry", emoji: "CHR", weight: 8,  pay5: 10,  pay4: 4,  pay3: 2 },
-  { name: "lemon",  emoji: "LEM", weight: 10, pay5: 5,   pay4: 2,  pay3: 1 },
+  { name: "lemon",  emoji: "LEM", weight: 10, pay5: 5,   pay4: 2,  pay3: 1.5 },
 ];
 
 const TOTAL_WEIGHT = SYMBOLS.reduce((s, sym) => s + sym.weight, 0);
