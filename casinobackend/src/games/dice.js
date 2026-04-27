@@ -22,7 +22,7 @@ const HOUSE_EDGE = 1; // 1%
 const MIN_TARGET = 2; // min probability: 2% (max multiplier ~49.5x)
 const MAX_TARGET = 98; // max probability: 98% (min multiplier ~1.01x)
 const MAX_MULTIPLIER = 49.5;
-const MIN_BET_USDT = 0.01;
+const MIN_BET_USDT = 0.001;
 
 /**
  * Calculate win probability for a given target + direction

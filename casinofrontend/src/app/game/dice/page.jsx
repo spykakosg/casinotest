@@ -29,7 +29,8 @@ export default function DicePage() {
   // Derived
   const winProbability = direction === "under" ? target : 100 - target;
   const multiplier     = winProbability > 0 ? ((99 / winProbability)).toFixed(4) : "0";
-  const profit         = ((parseFloat(betAmount) || 0) * (parseFloat(multiplier) - 1)).toFixed(2);
+  const profitVal      = (parseFloat(betAmount) || 0) * (parseFloat(multiplier) - 1);
+  const profit         = Math.abs(profitVal) < 0.01 ? profitVal.toFixed(4) : profitVal.toFixed(2);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -80,9 +81,9 @@ export default function DicePage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.01, parseFloat(v) / 2).toFixed(2)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(2)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(2)); }
+  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -178,8 +179,8 @@ export default function DicePage() {
                 <div className="flex gap-1">
                   <input
                     type="number"
-                    min="0.01"
-                    step="0.01"
+                    min="0.001"
+                    step="0.001"
                     value={betAmount}
                     onChange={e => setBetAmount(e.target.value)}
                     className="flex-1 bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors min-w-0"
@@ -277,7 +278,7 @@ function ResultDisplay({ result }) {
       }`}>
         {won ? "✓ WIN" : "✗ LOSS"}
         <span className="opacity-70">
-          {won ? `+${bet.payout.toFixed(2)}` : `-${bet.betAmount.toFixed(2)}`}
+          {won ? `+${bet.payout < 0.01 ? bet.payout.toFixed(4) : bet.payout.toFixed(2)}` : `-${bet.betAmount < 0.01 ? bet.betAmount.toFixed(4) : bet.betAmount.toFixed(2)}`}
         </span>
       </div>
 

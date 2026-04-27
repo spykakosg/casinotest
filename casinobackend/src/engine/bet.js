@@ -77,8 +77,8 @@ async function placeDiceBet(db, { userId, currency, betAmount, target, direction
       direction,
     });
 
-    // 5. Credit winnings if won
-    if (result.won) {
+    // 5. Credit payout (partial or full — e.g. plinko 0.5x returns partial)
+    if (result.payout > 0) {
       await client.query(
         `UPDATE wallets SET balance = balance + $1 WHERE id = $2`,
         [result.payout, wallet.id]
@@ -221,7 +221,7 @@ async function placeRouletteBet(db, { userId, currency, betAmount, betType, betV
       nonce: wallet.nonce, betAmount, betType, betValue,
     });
 
-    if (result.won) {
+    if (result.payout > 0) {
       await client.query(`UPDATE wallets SET balance = balance + $1 WHERE id = $2`, [result.payout, wallet.id]);
     }
 
@@ -310,7 +310,7 @@ async function placePlinkoBet(db, { userId, currency, betAmount, rows, risk }) {
       nonce: wallet.nonce, betAmount, rows, risk,
     });
 
-    if (result.won) {
+    if (result.payout > 0) {
       await client.query(`UPDATE wallets SET balance = balance + $1 WHERE id = $2`, [result.payout, wallet.id]);
     }
 
@@ -352,7 +352,7 @@ async function placeLimboBet(db, { userId, currency, betAmount, target }) {
       nonce: wallet.nonce, betAmount, target,
     });
 
-    if (result.won) {
+    if (result.payout > 0) {
       await client.query(`UPDATE wallets SET balance = balance + $1 WHERE id = $2`, [result.payout, wallet.id]);
     }
 
@@ -394,7 +394,7 @@ async function placeSlotsBet(db, { userId, currency, betAmount }) {
       nonce: wallet.nonce, betAmount,
     });
 
-    if (result.won) {
+    if (result.payout > 0) {
       await client.query(`UPDATE wallets SET balance = balance + $1 WHERE id = $2`, [result.payout, wallet.id]);
     }
 

@@ -294,9 +294,9 @@ export default function PlinkoPage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.01, parseFloat(v) / 2).toFixed(2)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(2)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(2)); }
+  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -320,7 +320,7 @@ export default function PlinkoPage() {
                     {result.multiplier}x
                   </span>
                   <span className={`ml-2 text-sm font-mono ${result.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                    {result.profit >= 0 ? "+" : ""}{result.profit.toFixed(2)}
+                    {result.profit >= 0 ? "+" : ""}{Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}
                   </span>
                 </div>
               )}

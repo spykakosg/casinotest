@@ -142,9 +142,9 @@ export default function SlotsPage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.01, parseFloat(v) / 2).toFixed(2)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(2)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(2)); }
+  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
 
   if (authLoading) return <LoadingScreen />;
 

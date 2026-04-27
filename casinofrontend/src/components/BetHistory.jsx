@@ -42,8 +42,9 @@ function BetRow({ bet }) {
   const payout = parseFloat(bet.payout || 0);
   const profit = bet.profit !== undefined && bet.profit !== null ? parseFloat(bet.profit) : payout - amount;
   const roll = typeof bet.roll === "number" ? bet.roll : parseFloat(bet.roll);
-  const isPush = Math.abs(profit) < 0.001;
-  const isWin = profit > 0.001;
+  const isPush = Math.abs(profit) < 0.0001;
+  const isWin = profit > 0.0001;
+  function fmt(v) { return Math.abs(v) < 0.01 && Math.abs(v) > 0 ? v.toFixed(4) : v.toFixed(2); }
   return (
     <div className={`px-4 py-3 flex items-center gap-3 hover:bg-casino-surface/50 transition-colors ${
       isWin ? "border-l-2 border-green-500/40" : isPush ? "border-l-2 border-yellow-500/30" : "border-l-2 border-red-500/20"
@@ -59,7 +60,7 @@ function BetRow({ bet }) {
           {bet.direction} {bet.target} · {bet.multiplier}×
         </div>
         <div className="text-xs text-casino-muted/60 font-mono">
-          {amount.toFixed(2)} → {payout.toFixed(2)}
+          {fmt(amount)} → {fmt(payout)}
         </div>
       </div>
 
@@ -67,7 +68,7 @@ function BetRow({ bet }) {
       <div className={`text-xs font-mono font-semibold shrink-0 ${
         isWin ? "text-green-400" : isPush ? "text-yellow-400" : "text-red-400"
       }`}>
-        {isPush ? "0.00" : isWin ? `+${profit.toFixed(2)}` : profit.toFixed(2)}
+        {isPush ? "0.00" : isWin ? `+${fmt(profit)}` : fmt(profit)}
       </div>
     </div>
   );

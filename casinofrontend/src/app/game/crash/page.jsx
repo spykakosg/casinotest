@@ -247,16 +247,16 @@ export default function CrashPage() {
                   Bet Amount
                 </label>
                 <input
-                  type="number" min="0.01" step="0.01"
+                  type="number" min="0.001" step="0.001"
                   value={betAmount}
                   onChange={e => setBetAmount(e.target.value)}
                   disabled={alreadyIn || autoplayActive}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors disabled:opacity-40"
                 />
                 <div className="flex gap-1 mt-1">
-                  {[["½", () => setBetAmount(v => (parseFloat(v)/2).toFixed(2))],
-                    ["2×", () => setBetAmount(v => (parseFloat(v)*2).toFixed(2))],
-                    ["Max", () => setBetAmount((balances[currency]||0).toFixed(2))]
+                  {[["½", () => setBetAmount(v => Math.max(0.001, parseFloat(v)/2).toFixed(3))],
+                    ["2×", () => setBetAmount(v => (parseFloat(v)*2).toFixed(3))],
+                    ["Max", () => setBetAmount((balances[currency]||0).toFixed(3))]
                   ].map(([l, fn]) => (
                     <button key={l} onClick={fn} disabled={alreadyIn || autoplayActive}
                       className="flex-1 bg-casino-surface border border-casino-border rounded py-1 text-xs font-mono text-casino-muted hover:text-white transition-colors disabled:opacity-40">

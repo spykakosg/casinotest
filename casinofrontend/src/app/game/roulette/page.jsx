@@ -117,23 +117,7 @@ function RouletteWheel({ spinning, resultNumber, spinKey }) {
         ctx.fill();
       }
 
-      // Pointer (top)
-      ctx.beginPath();
-      ctx.moveTo(cx, 0);
-      ctx.lineTo(cx - 8, -2);
-      ctx.lineTo(cx + 8, -2);
-      ctx.closePath();
-      ctx.fillStyle = "#eab308";
-      ctx.fill();
 
-      const pointerTip = 6;
-      ctx.beginPath();
-      ctx.moveTo(cx, pointerTip + 10);
-      ctx.lineTo(cx - 7, pointerTip);
-      ctx.lineTo(cx + 7, pointerTip);
-      ctx.closePath();
-      ctx.fillStyle = "#eab308";
-      ctx.fill();
     }
 
     // Initial draw
@@ -176,16 +160,20 @@ function RouletteWheel({ spinning, resultNumber, spinKey }) {
     } else if (resultNumber !== null && phaseRef.current === "spinning") {
       phaseRef.current = "landing";
       const resultIdx = WHEEL_ORDER.indexOf(resultNumber);
-      const targetWheelAngle = -(resultIdx * sliceAngle + sliceAngle / 2) + Math.PI / 2;
+      // Target: winning number at top (12 o'clock = -π/2 in canvas coords)
+      // Slice i center is at: wheelRot + i*sliceAngle - π/2 + sliceAngle/2
+      // For that to equal -π/2: wheelRot = -(i*sliceAngle + sliceAngle/2)
+      const targetWheelAngle = -(resultIdx * sliceAngle + sliceAngle / 2);
 
-      // Calculate how much more to rotate to land on the result
-      const currentNorm = rotRef.current % (Math.PI * 2);
-      let delta = targetWheelAngle - currentNorm;
-      while (delta < 0) delta += Math.PI * 2;
-      const totalSpin = Math.PI * 2 * 5 + delta; // 5 extra full rotations for deceleration
+      const currentNorm = ((rotRef.current % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const targetNorm = ((targetWheelAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      let delta = targetNorm - currentNorm;
+      if (delta < 0) delta += Math.PI * 2;
+      const totalSpin = Math.PI * 2 * 5 + delta;
       const startRot = rotRef.current;
       const startBall = ballAngleRef.current;
-      const targetBall = -(resultIdx * sliceAngle + sliceAngle / 2) - Math.PI / 2;
+      // Ball lands at top where the winning number will be
+      const targetBall = -Math.PI / 2;
 
       const duration = 3000;
       const startTime = Date.now();
@@ -292,14 +280,6 @@ function drawFull(ctx, size, cx, cy, outerR, innerR, ballR, sliceAngle, wheelRot
     ctx.fill();
   }
 
-  const pointerTip = 6;
-  ctx.beginPath();
-  ctx.moveTo(cx, pointerTip + 10);
-  ctx.lineTo(cx - 7, pointerTip);
-  ctx.lineTo(cx + 7, pointerTip);
-  ctx.closePath();
-  ctx.fillStyle = "#eab308";
-  ctx.fill();
 }
 
 // Table layout: numbers arranged 3 rows x 12 columns (standard roulette table)
@@ -425,9 +405,9 @@ export default function RoulettePage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.01, parseFloat(v) / 2).toFixed(2)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(2)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(2)); }
+  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -436,7 +416,7 @@ export default function RoulettePage() {
     low: 2, high: 2, dozen1: 3, dozen2: 3, dozen3: 3, column1: 3, column2: 3, column3: 3,
   };
   const currentPayout = betType ? (payoutMap[betType] || 2) : 0;
-  const potentialWin = ((parseFloat(betAmount) || 0) * currentPayout).toFixed(2);
+  const potentialWin = ((parseFloat(betAmount) || 0) * currentPayout).toFixed(4);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -455,7 +435,7 @@ export default function RoulettePage() {
                     getColor(result.result) === "green" ? "bg-green-600" : getColor(result.result) === "red" ? "bg-red-600" : "bg-gray-700"
                   }`}>{result.result}</div>
                   <p className={`text-sm font-bold mt-1 ${result.won ? "text-green-400" : "text-red-400"}`}>
-                    {result.won ? `+${result.profit.toFixed(2)}` : result.profit.toFixed(2)}
+                    {result.won ? `+${Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}` : (Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2))}
                   </p>
                 </div>
               )}
