@@ -109,3 +109,46 @@ export async function getWithdrawalHistory() {
 export async function getCrashBetHistory(limit = 20, offset = 0) {
   return request(`/api/crash/my-bets?limit=${limit}&offset=${offset}`);
 }
+
+// ─── Roulette ─────────────────────────────────────────────────────────────────
+export async function placeRouletteBet({ currency, betAmount, betType, betValue }) {
+  return request("/api/games/roulette/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, betType, betValue }),
+  });
+}
+
+export async function getRouletteBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=roulette`);
+}
+
+// ─── Blackjack ────────────────────────────────────────────────────────────────
+export async function blackjackDeal({ currency, betAmount }) {
+  return request("/api/blackjack/deal", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount }),
+  });
+}
+
+export async function blackjackAction({ gameId, action }) {
+  return request("/api/blackjack/action", {
+    method: "POST",
+    body: JSON.stringify({ gameId, action }),
+  });
+}
+
+export async function getBlackjackBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=blackjack`);
+}
+
+// ─── Plinko ───────────────────────────────────────────────────────────────────
+export async function placePlinkoBet({ currency, betAmount, rows, risk }) {
+  return request("/api/games/plinko/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, rows, risk }),
+  });
+}
+
+export async function getPlinkoBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=plinko`);
+}

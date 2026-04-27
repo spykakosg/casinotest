@@ -35,6 +35,9 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
         <nav className="hidden md:flex items-center gap-1">
           <NavLink href="/game/dice" active={pathname === "/game/dice"}>🎲 Dice</NavLink>
           <NavLink href="/game/crash" active={pathname === "/game/crash"}>🚀 Crash</NavLink>
+          <NavLink href="/game/roulette" active={pathname === "/game/roulette"}>🎰 Roulette</NavLink>
+          <NavLink href="/game/blackjack" active={pathname === "/game/blackjack"}>🃏 Blackjack</NavLink>
+          <NavLink href="/game/plinko" active={pathname === "/game/plinko"}>📍 Plinko</NavLink>
           <NavLink href="/wallet" active={pathname === "/wallet"}>💼 Wallet</NavLink>
         </nav>
 
@@ -75,6 +78,9 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
       <div className="md:hidden flex border-t border-casino-border">
         <MobileNavLink href="/game/dice" active={pathname === "/game/dice"}>🎲 Dice</MobileNavLink>
         <MobileNavLink href="/game/crash" active={pathname === "/game/crash"}>🚀 Crash</MobileNavLink>
+        <MobileNavLink href="/game/roulette" active={pathname === "/game/roulette"}>🎰 Roulette</MobileNavLink>
+        <MobileNavLink href="/game/blackjack" active={pathname === "/game/blackjack"}>🃏 Blackjack</MobileNavLink>
+        <MobileNavLink href="/game/plinko" active={pathname === "/game/plinko"}>📍 Plinko</MobileNavLink>
         <MobileNavLink href="/wallet" active={pathname === "/wallet"}>💼 Wallet</MobileNavLink>
       </div>
     </header>

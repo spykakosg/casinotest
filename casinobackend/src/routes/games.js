@@ -10,8 +10,10 @@
 
 const express = require("express");
 const router = express.Router();
-const { placeDiceBet, rotateServerSeed, getBetHistory } = require("../engine/bet");
+const { placeDiceBet, placeRouletteBet, placePlinkoBet, rotateServerSeed, getBetHistory } = require("../engine/bet");
 const { getDiceGameInfo } = require("../games/dice");
+const { BET_TYPES } = require("../games/roulette");
+const { MULTIPLIERS, VALID_ROWS, VALID_RISKS } = require("../games/plinko");
 const { rollDice, hashServerSeed } = require("../engine/rng");
 const auth = require("../middleware/auth");
 
@@ -112,6 +114,73 @@ router.post("/dice/seed", auth, async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
+});
+
+// ─── Roulette: Place Bet ──────────────────────────────────────────────────────
+router.post("/roulette/bet", auth, async (req, res) => {
+  const { currency, betAmount, betType, betValue } = req.body;
+
+  if (!currency || !betAmount || !betType) {
+    return res.status(400).json({ error: "Missing required fields: currency, betAmount, betType" });
+  }
+
+  const validCurrencies = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
+  if (!validCurrencies.includes(currency)) {
+    return res.status(400).json({ error: `Invalid currency` });
+  }
+
+  const amount = parseFloat(betAmount);
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: "betAmount must be a positive number" });
+  }
+
+  try {
+    const result = await placeRouletteBet(req.db, {
+      userId: req.user.id, currency, betAmount: amount, betType,
+      betValue: betValue !== undefined ? betValue : null,
+    });
+    return res.json({ success: true, bet: result, balance: result.newBalance });
+  } catch (err) {
+    const isUserError = ["Insufficient balance", "Invalid bet", "Straight bet"].some(e => err.message.includes(e));
+    return res.status(isUserError ? 400 : 500).json({ error: err.message });
+  }
+});
+
+router.get("/roulette/info", (_req, res) => {
+  return res.json({ betTypes: BET_TYPES });
+});
+
+// ─── Plinko: Place Bet ────────────────────────────────────────────────────────
+router.post("/plinko/bet", auth, async (req, res) => {
+  const { currency, betAmount, rows, risk } = req.body;
+
+  if (!currency || !betAmount || !rows || !risk) {
+    return res.status(400).json({ error: "Missing required fields: currency, betAmount, rows, risk" });
+  }
+
+  const validCurrencies = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
+  if (!validCurrencies.includes(currency)) {
+    return res.status(400).json({ error: `Invalid currency` });
+  }
+
+  const amount = parseFloat(betAmount);
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: "betAmount must be a positive number" });
+  }
+
+  try {
+    const result = await placePlinkoBet(req.db, {
+      userId: req.user.id, currency, betAmount: amount, rows: parseInt(rows), risk,
+    });
+    return res.json({ success: true, bet: result, balance: result.newBalance });
+  } catch (err) {
+    const isUserError = ["Insufficient balance", "Rows must", "Risk must"].some(e => err.message.includes(e));
+    return res.status(isUserError ? 400 : 500).json({ error: err.message });
+  }
+});
+
+router.get("/plinko/info", (_req, res) => {
+  return res.json({ multipliers: MULTIPLIERS, validRows: VALID_ROWS, validRisks: VALID_RISKS });
 });
 
 // ─── Bet History ─────────────────────────────────────────────────────────────

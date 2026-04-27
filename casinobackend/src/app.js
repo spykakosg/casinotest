@@ -15,6 +15,7 @@ const gamesRouter  = require("./routes/games");
 const walletRouter = require("./routes/wallet");
 const adminRouter  = require("./routes/admin");
 const { router: crashRouter, initCrash } = require("./routes/crash");
+const blackjackRouter = require("./routes/blackjack");
 
 const app    = express();
 const server = http.createServer(app);
@@ -39,6 +40,7 @@ app.use("/api/games",  betLimiter,  gamesRouter);
 app.use("/api/wallet", genLimiter,  walletRouter);
 app.use("/api/admin",  genLimiter,  adminRouter);
 app.use("/api/crash",  genLimiter,  crashRouter);
+app.use("/api/blackjack", betLimiter, blackjackRouter);
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 app.get("/health", async (_req, res) => {
@@ -52,7 +54,7 @@ app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ 
 // ─── Start ────────────────────────────────────────────────────────────────────
 server.listen(PORT, () => {
   console.log(`🎲 Casino backend running on http://localhost:${PORT}`);
-  console.log(`   Routes: /api/auth  /api/games  /api/crash  /api/wallet  /api/admin`);
+  console.log(`   Routes: /api/auth  /api/games  /api/crash  /api/blackjack  /api/wallet  /api/admin`);
   // Boot crash game (WebSocket + game loop)
   initCrash(server, pool);
 });
