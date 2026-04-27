@@ -44,6 +44,9 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
           <NavLink href="/game/limbo" active={pathname === "/game/limbo"}>🎯 Limbo</NavLink>
           <NavLink href="/game/slots" active={pathname === "/game/slots"}>🎰 Slots</NavLink>
           <NavLink href="/wallet" active={pathname === "/wallet"}>💼 Wallet</NavLink>
+          {user?.role === "admin" && (
+            <NavLink href="/admin" active={pathname === "/admin"}>🛡️ Admin</NavLink>
+          )}
         </nav>
 
         {/* Right side */}
@@ -90,6 +93,9 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
         <MobileNavLink href="/game/limbo" active={pathname === "/game/limbo"}>🎯 Limbo</MobileNavLink>
         <MobileNavLink href="/game/slots" active={pathname === "/game/slots"}>🎰 Slots</MobileNavLink>
         <MobileNavLink href="/wallet" active={pathname === "/wallet"}>💼 Wallet</MobileNavLink>
+        {user?.role === "admin" && (
+          <MobileNavLink href="/admin" active={pathname === "/admin"}>🛡️ Admin</MobileNavLink>
+        )}
       </div>
     </header>
   );

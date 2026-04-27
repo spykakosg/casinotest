@@ -202,3 +202,42 @@ export async function placeSlotsBet({ currency, betAmount }) {
 export async function getSlotsBetHistory(limit = 20, offset = 0) {
   return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=slots`);
 }
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export async function adminGetStats() {
+  return request("/api/admin/stats");
+}
+
+export async function adminGetUsers(limit = 50, offset = 0, search = "") {
+  const q = search ? `&search=${encodeURIComponent(search)}` : "";
+  return request(`/api/admin/users?limit=${limit}&offset=${offset}${q}`);
+}
+
+export async function adminGetUser(id) {
+  return request(`/api/admin/users/${id}`);
+}
+
+export async function adminBanUser(id, banned) {
+  return request(`/api/admin/users/${id}/ban`, {
+    method: "PUT",
+    body: JSON.stringify({ banned }),
+  });
+}
+
+export async function adminCreditUser(id, currency, amount) {
+  return request(`/api/admin/users/${id}/credit`, {
+    method: "PUT",
+    body: JSON.stringify({ currency, amount }),
+  });
+}
+
+export async function adminGetPendingWithdrawals() {
+  return request("/api/admin/withdrawals/pending");
+}
+
+export async function adminProcessWithdrawal(id, action, txHash) {
+  return request(`/api/admin/withdrawals/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ action, txHash: txHash || undefined }),
+  });
+}
