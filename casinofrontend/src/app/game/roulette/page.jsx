@@ -73,6 +73,7 @@ export default function RoulettePage() {
       setHistory(prev => [{
         id: data.bet.betId,
         game: "roulette",
+        roll: data.bet.result,
         bet_amount: data.bet.betAmount,
         payout: data.bet.payout,
         profit: data.bet.profit,
@@ -115,8 +116,7 @@ export default function RoulettePage() {
 
             {spinning ? (
               <div className="text-center relative z-10">
-                <div className="w-16 h-16 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-casino-muted text-sm">Spinning...</p>
+                <RouletteWheel />
               </div>
             ) : result ? (
               <div className="text-center relative z-10">
@@ -144,13 +144,14 @@ export default function RoulettePage() {
           {history.length > 0 && (
             <div className="flex gap-1 overflow-x-auto pb-1">
               {history.slice(0, 20).map((bet, i) => {
-                const num = bet.roll ?? bet.result;
-                const c = num !== undefined ? getColor(num) : "gray";
+                const raw = bet.roll !== undefined && bet.roll !== null ? bet.roll : bet.result;
+                const num = raw !== undefined && raw !== null ? parseInt(raw) : null;
+                const c = num !== null && !isNaN(num) ? getColor(num) : "gray";
                 return (
                   <div key={bet.id || i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                     c === "green" ? "bg-green-600" : c === "red" ? "bg-red-600" : "bg-gray-700"
                   }`}>
-                    {num ?? "?"}
+                    {num !== null && !isNaN(num) ? num : "?"}
                   </div>
                 );
               })}
@@ -244,6 +245,34 @@ export default function RoulettePage() {
           />
         </div>
       </main>
+    </div>
+  );
+}
+
+function RouletteWheel() {
+  const numbers = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+  const sliceAngle = 360 / numbers.length;
+
+  return (
+    <div className="relative w-32 h-32 mx-auto mb-2">
+      <div className="w-full h-full rounded-full border-4 border-gold/60 overflow-hidden animate-[spin_0.5s_linear_infinite] relative"
+        style={{
+          background: `conic-gradient(${numbers.map((n, i) => {
+            const color = n === 0 ? "#16a34a" : [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(n) ? "#dc2626" : "#1f2937";
+            const start = (i / numbers.length * 100).toFixed(2);
+            const end = ((i + 1) / numbers.length * 100).toFixed(2);
+            return `${color} ${start}% ${end}%`;
+          }).join(", ")})`
+        }}
+      />
+      {/* Center */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-casino-card border-2 border-gold/40 flex items-center justify-center">
+          <span className="text-gold text-xs font-bold">?</span>
+        </div>
+      </div>
+      {/* Pointer */}
+      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-gold z-10" />
     </div>
   );
 }

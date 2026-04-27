@@ -149,7 +149,6 @@ function buildResult(playerCards, dealerCards, betAmount, outcome, doubled, nonc
   }
 
   const payout = parseFloat((betAmount * multiplier).toFixed(8));
-  const profit = parseFloat((payout - (doubled ? betAmount : betAmount / (doubled ? 1 : 1))).toFixed(8));
   const won = multiplier > 1;
 
   return {
@@ -170,7 +169,7 @@ function buildResult(playerCards, dealerCards, betAmount, outcome, doubled, nonc
 
 function validateBlackjackBet({ betAmount, balance }) {
   if (betAmount <= 0) return { valid: false, error: "Bet amount must be positive" };
-  if (betAmount * 2 > balance) return { valid: false, error: "Insufficient balance (need 2x for potential double)" };
+  if (betAmount > balance) return { valid: false, error: "Insufficient balance" };
   return { valid: true };
 }
 

@@ -36,8 +36,8 @@ function PlinkoBoard({ rows, path, bucket, risk, animating }) {
     const ctx = canvas.getContext("2d");
     const W = canvas.width;
     const H = canvas.height;
-    const pegRadius = 3;
-    const pegSpacingY = (H - 60) / rows;
+    const pegRadius = 2;
+    const pegSpacingY = (H - 50) / rows;
     const multipliers = MULTIPLIERS[rows]?.[risk] || [];
 
     function getPegX(row, col) {
@@ -131,7 +131,7 @@ function PlinkoBoard({ rows, path, bucket, risk, animating }) {
     <canvas
       ref={canvasRef}
       width={Math.max(200, (rows + 2) * 22)}
-      height={rows * 25 + 80}
+      height={Math.min(rows * 20 + 60, 280)}
       className="mx-auto"
     />
   );
@@ -235,8 +235,8 @@ export default function PlinkoPage() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
 
-          {/* Plinko Board */}
-          <div className="bg-casino-card border border-casino-border rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden">
+          {/* Plinko Board + Controls in single card */}
+          <div className="bg-casino-card border border-casino-border rounded-2xl p-3 space-y-2 relative overflow-hidden">
             <div className="absolute inset-0 opacity-5"
               style={{backgroundImage:"radial-gradient(circle at 50% 50%, var(--gold) 0%, transparent 70%)"}} />
 
@@ -244,34 +244,29 @@ export default function PlinkoPage() {
               <PlinkoBoard rows={rows} path={path} bucket={bucket} risk={risk} animating={animating} />
 
               {result && !animating && (
-                <div className="text-center mt-3">
-                  <p className="text-lg font-bold">
-                    <span className="text-gold">{result.multiplier}x</span>
-                  </p>
-                  <p className={`text-sm font-mono ${result.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                <div className="text-center mt-1">
+                  <span className="text-gold font-bold">{result.multiplier}x</span>
+                  <span className={`ml-2 text-sm font-mono ${result.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
                     {result.profit >= 0 ? "+" : ""}{result.profit.toFixed(2)}
-                  </p>
+                  </span>
                 </div>
               )}
             </div>
-          </div>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-3 py-2">
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-3 py-1.5 relative z-10">
+                {error}
+              </div>
+            )}
 
-          {/* Controls */}
-          <div className="bg-casino-card border border-casino-border rounded-2xl p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              {/* Rows */}
+            {/* Rows + Risk side by side */}
+            <div className="grid grid-cols-2 gap-2 relative z-10">
               <div className="space-y-1">
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Rows</span>
                 <div className="flex gap-1">
                   {[8, 12, 16].map(r => (
                     <button key={r} onClick={() => setRows(r)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all border ${
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                         rows === r
                           ? "bg-gold/20 border-gold/50 text-gold"
                           : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
@@ -281,14 +276,12 @@ export default function PlinkoPage() {
                   ))}
                 </div>
               </div>
-
-              {/* Risk */}
               <div className="space-y-1">
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Risk</span>
                 <div className="flex gap-1">
                   {["low", "medium", "high"].map(r => (
                     <button key={r} onClick={() => setRisk(r)}
-                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all border capitalize ${
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border capitalize ${
                         risk === r
                           ? "bg-gold/20 border-gold/50 text-gold"
                           : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
@@ -301,28 +294,28 @@ export default function PlinkoPage() {
             </div>
 
             {/* Bet amount + currency */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 relative z-10">
               <div className="space-y-1">
-                <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Bet Amount</span>
+                <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Bet</span>
                 <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)}
-                  className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold/50" />
+                  className="w-full bg-casino-surface border border-casino-border rounded-lg px-2 py-1.5 text-white font-mono text-sm focus:outline-none focus:border-gold/50" />
                 <div className="flex gap-1">
-                  <button onClick={halfBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-2 py-1 text-xs text-casino-muted hover:text-white transition-colors">1/2</button>
-                  <button onClick={doubleBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-2 py-1 text-xs text-casino-muted hover:text-white transition-colors">2x</button>
-                  <button onClick={maxBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-2 py-1 text-xs text-casino-muted hover:text-white transition-colors">Max</button>
+                  <button onClick={halfBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-1 py-0.5 text-xs text-casino-muted hover:text-white transition-colors">1/2</button>
+                  <button onClick={doubleBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-1 py-0.5 text-xs text-casino-muted hover:text-white transition-colors">2x</button>
+                  <button onClick={maxBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-1 py-0.5 text-xs text-casino-muted hover:text-white transition-colors">Max</button>
                 </div>
               </div>
               <div className="space-y-1">
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Currency</span>
                 <select value={currency} onChange={e => setCurrency(e.target.value)}
-                  className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold/50">
+                  className="w-full bg-casino-surface border border-casino-border rounded-lg px-2 py-1.5 text-white font-mono text-sm focus:outline-none focus:border-gold/50">
                   {CURRENCIES.map(c => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
                 </select>
               </div>
             </div>
 
             <button onClick={handleDrop} disabled={dropping}
-              className="w-full py-3 rounded-xl font-bold text-sm transition-all bg-gradient-to-r from-gold to-yellow-500 text-black hover:shadow-lg hover:shadow-gold/20 disabled:opacity-50 disabled:cursor-not-allowed">
+              className="w-full py-2.5 rounded-xl font-bold text-sm transition-all bg-gradient-to-r from-gold to-yellow-500 text-black hover:shadow-lg hover:shadow-gold/20 disabled:opacity-50 disabled:cursor-not-allowed relative z-10">
               {dropping ? "Dropping..." : "Drop Ball"}
             </button>
           </div>

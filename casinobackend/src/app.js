@@ -16,6 +16,7 @@ const walletRouter = require("./routes/wallet");
 const adminRouter  = require("./routes/admin");
 const { router: crashRouter, initCrash } = require("./routes/crash");
 const blackjackRouter = require("./routes/blackjack");
+const minesRouter = require("./routes/mines");
 
 const app    = express();
 const server = http.createServer(app);
@@ -41,6 +42,7 @@ app.use("/api/wallet", genLimiter,  walletRouter);
 app.use("/api/admin",  genLimiter,  adminRouter);
 app.use("/api/crash",  genLimiter,  crashRouter);
 app.use("/api/blackjack", betLimiter, blackjackRouter);
+app.use("/api/mines", betLimiter, minesRouter);
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 app.get("/health", async (_req, res) => {

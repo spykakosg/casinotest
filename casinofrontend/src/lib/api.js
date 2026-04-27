@@ -152,3 +152,53 @@ export async function placePlinkoBet({ currency, betAmount, rows, risk }) {
 export async function getPlinkoBetHistory(limit = 20, offset = 0) {
   return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=plinko`);
 }
+
+// ─── Mines ────────────────────────────────────────────────────────────────────
+export async function minesStart({ currency, betAmount, mineCount }) {
+  return request("/api/mines/start", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, mineCount }),
+  });
+}
+
+export async function minesReveal({ gameId, tileIndex }) {
+  return request("/api/mines/reveal", {
+    method: "POST",
+    body: JSON.stringify({ gameId, tileIndex }),
+  });
+}
+
+export async function minesCashout({ gameId }) {
+  return request("/api/mines/cashout", {
+    method: "POST",
+    body: JSON.stringify({ gameId }),
+  });
+}
+
+export async function getMinesBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=mines`);
+}
+
+// ─── Limbo ────────────────────────────────────────────────────────────────────
+export async function placeLimboBet({ currency, betAmount, target }) {
+  return request("/api/games/limbo/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, target }),
+  });
+}
+
+export async function getLimboBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=limbo`);
+}
+
+// ─── Slots ────────────────────────────────────────────────────────────────────
+export async function placeSlotsBet({ currency, betAmount }) {
+  return request("/api/games/slots/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount }),
+  });
+}
+
+export async function getSlotsBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=slots`);
+}
