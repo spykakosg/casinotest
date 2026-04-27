@@ -44,7 +44,7 @@ function BetRow({ bet }) {
   const roll = typeof bet.roll === "number" ? bet.roll : parseFloat(bet.roll);
   const isPush = Math.abs(profit) < 0.0001;
   const isWin = profit > 0.0001;
-  function fmt(v) { return Math.abs(v) < 0.01 && Math.abs(v) > 0 ? v.toFixed(4) : v.toFixed(2); }
+  function fmt(v) { return v.toFixed(5); }
   return (
     <div className={`px-4 py-3 flex items-center gap-3 hover:bg-casino-surface/50 transition-colors ${
       isWin ? "border-l-2 border-green-500/40" : isPush ? "border-l-2 border-yellow-500/30" : "border-l-2 border-red-500/20"

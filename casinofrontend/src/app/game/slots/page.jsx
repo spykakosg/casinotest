@@ -142,9 +142,12 @@ export default function SlotsPage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBet = isCrypto ? 0.00000001 : 0.001;
+  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -248,7 +251,7 @@ export default function SlotsPage() {
                       <p className={`text-2xl font-black ${winAnim ? "text-gold animate-pulse" : "text-green-400"}`}>
                         WIN! {result.multiplier}x
                       </p>
-                      <p className="text-green-400 font-mono text-sm">+{result.profit < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}</p>
+                      <p className="text-green-400 font-mono text-sm">+{result.profit.toFixed(5)}</p>
                       {result.matchCount && (
                         <p className="text-xs text-casino-muted mt-1">{result.matchCount}-of-a-kind!</p>
                       )}

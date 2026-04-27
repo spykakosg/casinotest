@@ -243,9 +243,12 @@ export default function BlackjackPage() {
     setRevealingDealer(false);
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
-  function maxBet()    { setBetAmount(((balances[currency] || 0) / 2).toFixed(3)); }
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBet = isCrypto ? 0.00000001 : 0.001;
+  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
+  function maxBet()    { setBetAmount(((balances[currency] || 0) / 2).toFixed(betDecimals)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -327,7 +330,7 @@ export default function BlackjackPage() {
                     </p>
                     {profit !== null && (
                       <p className={`text-lg font-mono mt-1 ${profit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                        {profit >= 0 ? "+" : ""}{Math.abs(profit) < 0.01 ? profit.toFixed(4) : profit.toFixed(2)}
+                        {profit >= 0 ? "+" : ""}{profit.toFixed(5)}
                       </p>
                     )}
                   </div>

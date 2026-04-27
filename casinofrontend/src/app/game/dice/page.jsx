@@ -30,7 +30,7 @@ export default function DicePage() {
   const winProbability = direction === "under" ? target : 100 - target;
   const multiplier     = winProbability > 0 ? ((99 / winProbability)).toFixed(4) : "0";
   const profitVal      = (parseFloat(betAmount) || 0) * (parseFloat(multiplier) - 1);
-  const profit         = Math.abs(profitVal) < 0.01 ? profitVal.toFixed(4) : profitVal.toFixed(2);
+  const profit         = profitVal.toFixed(5);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -81,9 +81,12 @@ export default function DicePage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBet = isCrypto ? 0.00000001 : 0.001;
+  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -278,7 +281,7 @@ function ResultDisplay({ result }) {
       }`}>
         {won ? "✓ WIN" : "✗ LOSS"}
         <span className="opacity-70">
-          {won ? `+${bet.payout < 0.01 ? bet.payout.toFixed(4) : bet.payout.toFixed(2)}` : `-${bet.betAmount < 0.01 ? bet.betAmount.toFixed(4) : bet.betAmount.toFixed(2)}`}
+          {won ? `+${bet.payout.toFixed(5)}` : `-${bet.betAmount.toFixed(5)}`}
         </span>
       </div>
 

@@ -21,6 +21,8 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
   }
 
   const balance = balances[activeCurrency] ?? 0;
+  const isCrypto = activeCurrency === "BTC" || activeCurrency === "ETH_POLYGON";
+  const balanceDecimals = isCrypto ? 10 : 5;
 
   return (
     <header className="border-b border-casino-border bg-casino-surface/80 backdrop-blur-sm sticky top-0 z-50">
@@ -58,7 +60,7 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
               ))}
             </select>
             <span className="text-white font-mono text-sm font-medium">
-              {balance.toFixed(2)}
+              {balance.toFixed(balanceDecimals)}
             </span>
           </div>
 

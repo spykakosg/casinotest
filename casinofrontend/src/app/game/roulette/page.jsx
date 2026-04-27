@@ -314,6 +314,7 @@ export default function RoulettePage() {
   const [history, setHistory]     = useState([]);
   const [historyPage, setHistoryPage] = useState(0);
   const [spinKey, setSpinKey]     = useState(0);
+  const [roundActive, setRoundActive] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -342,6 +343,7 @@ export default function RoulettePage() {
     if (!betType) { setError("Select a bet first"); return; }
     setError("");
     setSpinning(true);
+    setRoundActive(true);
     setResult(null);
     setResultNumber(null);
     setSpinKey(k => k + 1);
@@ -361,6 +363,7 @@ export default function RoulettePage() {
 
       setTimeout(() => {
         setResult(data.bet);
+        setRoundActive(false);
         setBalances(prev => ({ ...prev, [currency]: data.balance }));
         setHistory(prev => [{
           id: data.bet.betId,
@@ -377,6 +380,7 @@ export default function RoulettePage() {
     } catch (err) {
       setError(err.message);
       setSpinning(false);
+      setRoundActive(false);
     }
   }
 
@@ -405,9 +409,12 @@ export default function RoulettePage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBet = isCrypto ? 0.00000001 : 0.001;
+  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -416,7 +423,7 @@ export default function RoulettePage() {
     low: 2, high: 2, dozen1: 3, dozen2: 3, dozen3: 3, column1: 3, column2: 3, column3: 3,
   };
   const currentPayout = betType ? (payoutMap[betType] || 2) : 0;
-  const potentialWin = ((parseFloat(betAmount) || 0) * currentPayout).toFixed(4);
+  const potentialWin = ((parseFloat(betAmount) || 0) * currentPayout).toFixed(5);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -435,7 +442,7 @@ export default function RoulettePage() {
                     getColor(result.result) === "green" ? "bg-green-600" : getColor(result.result) === "red" ? "bg-red-600" : "bg-gray-700"
                   }`}>{result.result}</div>
                   <p className={`text-sm font-bold mt-1 ${result.won ? "text-green-400" : "text-red-400"}`}>
-                    {result.won ? `+${Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}` : (Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2))}
+                    {result.won ? `+${result.profit.toFixed(5)}` : result.profit.toFixed(5)}
                   </p>
                 </div>
               )}
@@ -574,9 +581,9 @@ export default function RoulettePage() {
                 </select>
               </div>
               <button onClick={handleSpin}
-                disabled={spinning || !betType}
+                disabled={roundActive || !betType}
                 className="px-6 py-3 rounded-xl font-bold text-xs transition-all bg-gradient-to-r from-green-600 to-green-500 text-white hover:shadow-lg hover:shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
-                {spinning ? "..." : "SPIN"}
+                {roundActive ? "..." : "SPIN"}
               </button>
             </div>
           </div>

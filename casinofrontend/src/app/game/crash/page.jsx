@@ -67,6 +67,10 @@ export default function CrashPage() {
   }
 
   // Keep ref in sync with state for use inside effects
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBetCrash = isCrypto ? 0.00000001 : 0.001;
+
   useEffect(() => {
     autoplayRef.current = { active: autoplayActive, mode: autoplayMode, left: autoplayLeft };
   }, [autoplayActive, autoplayMode, autoplayLeft]);
@@ -194,7 +198,7 @@ export default function CrashPage() {
                     )}
                     {myBet && myBet.cashedOut && (
                       <div className="mt-2 text-green-400 font-mono text-sm">
-                        ✓ Cashed out {myBet.cashoutAt?.toFixed(2)}× → +{parseFloat(myBet.payout).toFixed(2)}
+                        ✓ Cashed out {myBet.cashoutAt?.toFixed(2)}× → +{parseFloat(myBet.payout).toFixed(5)}
                       </div>
                     )}
                     {isQueued && (
@@ -247,16 +251,16 @@ export default function CrashPage() {
                   Bet Amount
                 </label>
                 <input
-                  type="number" min="0.001" step="0.001"
+                  type="number" min={minBetCrash} step={minBetCrash}
                   value={betAmount}
                   onChange={e => setBetAmount(e.target.value)}
                   disabled={alreadyIn || autoplayActive}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors disabled:opacity-40"
                 />
                 <div className="flex gap-1 mt-1">
-                  {[["½", () => setBetAmount(v => Math.max(0.001, parseFloat(v)/2).toFixed(3))],
-                    ["2×", () => setBetAmount(v => (parseFloat(v)*2).toFixed(3))],
-                    ["Max", () => setBetAmount((balances[currency]||0).toFixed(3))]
+                  {[["½", () => setBetAmount(v => Math.max(minBetCrash, parseFloat(v)/2).toFixed(betDecimals))],
+                    ["2×", () => setBetAmount(v => (parseFloat(v)*2).toFixed(betDecimals))],
+                    ["Max", () => setBetAmount((balances[currency]||0).toFixed(betDecimals))]
                   ].map(([l, fn]) => (
                     <button key={l} onClick={fn} disabled={alreadyIn || autoplayActive}
                       className="flex-1 bg-casino-surface border border-casino-border rounded py-1 text-xs font-mono text-casino-muted hover:text-white transition-colors disabled:opacity-40">
@@ -437,7 +441,7 @@ export default function CrashPage() {
                       {bet.cashedOut ? (
                         <div className="text-right shrink-0">
                           <div className="text-green-400 text-xs font-mono">{bet.cashoutAt?.toFixed(2)}×</div>
-                          <div className="text-green-400 text-xs font-mono">+{parseFloat(bet.payout||0).toFixed(2)}</div>
+                          <div className="text-green-400 text-xs font-mono">+{parseFloat(bet.payout||0).toFixed(5)}</div>
                         </div>
                       ) : (
                         <div className={`text-xs font-mono font-semibold shrink-0 ${
@@ -463,13 +467,13 @@ export default function CrashPage() {
                           <span className="text-casino-muted text-xs font-mono">#{bet.round_id}</span>
                         </div>
                         <div className="text-xs text-casino-muted font-mono">
-                          {parseFloat(bet.bet_amount).toFixed(2)} {CCY_SHORT[bet.currency]}
+                          {parseFloat(bet.bet_amount).toFixed(5)} {CCY_SHORT[bet.currency]}
                         </div>
                       </div>
                       <div className={`text-xs font-mono font-semibold shrink-0 ${bet.won ? "text-green-400" : "text-red-400"}`}>
                         {bet.won
-                          ? `+${(parseFloat(bet.payout) - parseFloat(bet.bet_amount)).toFixed(2)}`
-                          : `-${parseFloat(bet.bet_amount).toFixed(2)}`}
+                          ? `+${(parseFloat(bet.payout) - parseFloat(bet.bet_amount)).toFixed(5)}`
+                          : `-${parseFloat(bet.bet_amount).toFixed(5)}`}
                       </div>
                     </div>
                   ))

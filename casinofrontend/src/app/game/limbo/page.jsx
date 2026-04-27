@@ -101,9 +101,12 @@ export default function LimboPage() {
     return () => { if (animRef.current) clearInterval(animRef.current); };
   }, []);
 
-  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBet = isCrypto ? 0.00000001 : 0.001;
+  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -131,7 +134,7 @@ export default function LimboPage() {
                   </p>
                   {result && (
                     <p className={`text-sm font-mono mt-2 ${result.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                      {result.profit >= 0 ? "+" : ""}{Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}
+                      {result.profit >= 0 ? "+" : ""}{result.profit.toFixed(5)}
                     </p>
                   )}
                 </>

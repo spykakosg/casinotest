@@ -294,9 +294,12 @@ export default function PlinkoPage() {
     }
   }
 
-  function halfBet()   { setBetAmount(v => Math.max(0.001, parseFloat(v) / 2).toFixed(3)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(3)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(3)); }
+  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
+  const betDecimals = isCrypto ? 8 : 3;
+  const minBet = isCrypto ? 0.00000001 : 0.001;
+  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
+  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
+  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -320,7 +323,7 @@ export default function PlinkoPage() {
                     {result.multiplier}x
                   </span>
                   <span className={`ml-2 text-sm font-mono ${result.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
-                    {result.profit >= 0 ? "+" : ""}{Math.abs(result.profit) < 0.01 ? result.profit.toFixed(4) : result.profit.toFixed(2)}
+                    {result.profit >= 0 ? "+" : ""}{result.profit.toFixed(5)}
                   </span>
                 </div>
               )}
