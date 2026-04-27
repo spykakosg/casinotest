@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -30,6 +30,12 @@ export default function CrashPage() {
   const [betHistory, setBetHistory]       = useState([]);
   const [histTab, setHistTab]             = useState("players"); // players | mine
 
+  // Autoplay state
+  const [autoplayActive, setAutoplayActive] = useState(false);
+  const [autoplayMode, setAutoplayMode]     = useState(null);   // 10 | 20 | 50 | "infinite"
+  const [autoplayLeft, setAutoplayLeft]     = useState(0);
+  const autoplayRef = useRef({ active: false, mode: null, left: 0 });
+
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
   }, [user, authLoading, router]);
@@ -57,6 +63,50 @@ export default function CrashPage() {
       const data = await getCrashBetHistory(30);
       setBetHistory(data.bets);
     } catch {}
+  }
+
+  // Keep ref in sync with state for use inside effects
+  useEffect(() => {
+    autoplayRef.current = { active: autoplayActive, mode: autoplayMode, left: autoplayLeft };
+  }, [autoplayActive, autoplayMode, autoplayLeft]);
+
+  // Autoplay: auto-place bet when waiting phase starts
+  useEffect(() => {
+    if (gameState !== "waiting") return;
+    const ap = autoplayRef.current;
+    if (!ap.active) return;
+
+    // Decrement counter for finite modes
+    if (ap.mode !== "infinite") {
+      if (ap.left <= 0) {
+        stopAutoplay();
+        return;
+      }
+      setAutoplayLeft(prev => prev - 1);
+    }
+
+    // Small delay to let the waiting phase settle
+    const timer = setTimeout(() => {
+      const amount = parseFloat(betAmount);
+      if (!amount || amount <= 0) return;
+      placeBet(amount, currency, autoCashoutOn && autoCashout ? parseFloat(autoCashout) : null);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [gameState]);
+
+  function startAutoplay(mode) {
+    const rounds = mode === "infinite" ? 0 : mode;
+    setAutoplayMode(mode);
+    setAutoplayLeft(rounds);
+    setAutoplayActive(true);
+    autoplayRef.current = { active: true, mode, left: rounds };
+  }
+
+  function stopAutoplay() {
+    setAutoplayActive(false);
+    setAutoplayMode(null);
+    setAutoplayLeft(0);
+    autoplayRef.current = { active: false, mode: null, left: 0 };
   }
 
   function handleBet() {
@@ -199,7 +249,7 @@ export default function CrashPage() {
                   type="number" min="0.01" step="0.01"
                   value={betAmount}
                   onChange={e => setBetAmount(e.target.value)}
-                  disabled={alreadyIn}
+                  disabled={alreadyIn || autoplayActive}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors disabled:opacity-40"
                 />
                 <div className="flex gap-1.5 mt-2">
@@ -207,7 +257,7 @@ export default function CrashPage() {
                     ["2×", () => setBetAmount(v => (parseFloat(v)*2).toFixed(2))],
                     ["Max", () => setBetAmount((balances[currency]||0).toFixed(2))]
                   ].map(([l, fn]) => (
-                    <button key={l} onClick={fn} disabled={alreadyIn}
+                    <button key={l} onClick={fn} disabled={alreadyIn || autoplayActive}
                       className="flex-1 bg-casino-surface border border-casino-border rounded-lg py-1.5 text-xs font-mono text-casino-muted hover:text-white transition-colors disabled:opacity-40">
                       {l}
                     </button>
@@ -225,9 +275,9 @@ export default function CrashPage() {
                   <div
                     role="switch"
                     aria-checked={autoCashoutOn}
-                    onClick={() => !alreadyIn && setAutoCashoutOn(v => !v)}
+                    onClick={() => !(alreadyIn || autoplayActive) && setAutoCashoutOn(v => !v)}
                     className={`relative w-10 h-5 rounded-full cursor-pointer transition-colors duration-200 ${
-                      alreadyIn ? "opacity-40 cursor-not-allowed" : ""
+                      (alreadyIn || autoplayActive) ? "opacity-40 cursor-not-allowed" : ""
                     } ${autoCashoutOn ? "bg-gold" : "bg-casino-muted"}`}
                   >
                     <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
@@ -239,7 +289,7 @@ export default function CrashPage() {
                   type="number" min="1.01" step="0.1"
                   value={autoCashout}
                   onChange={e => setAutoCashout(e.target.value)}
-                  disabled={!autoCashoutOn || alreadyIn}
+                  disabled={!autoCashoutOn || alreadyIn || autoplayActive}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2.5 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors disabled:opacity-40"
                 />
                 <p className="text-casino-muted text-xs mt-1.5 font-mono">
@@ -251,7 +301,7 @@ export default function CrashPage() {
             {/* Currency */}
             <div className="flex gap-2">
               {CURRENCIES.map(c => (
-                <button key={c} onClick={() => setCurrency(c)} disabled={alreadyIn}
+                <button key={c} onClick={() => setCurrency(c)} disabled={alreadyIn || autoplayActive}
                   className={`flex-1 py-2 rounded-lg text-xs font-mono transition-colors disabled:opacity-40 ${
                     currency === c
                       ? "bg-gold/10 text-gold border border-gold/30"
@@ -260,6 +310,41 @@ export default function CrashPage() {
                   {CCY_SHORT[c]}
                 </button>
               ))}
+            </div>
+
+            {/* Autoplay */}
+            <div>
+              <label className="text-xs text-casino-muted font-mono uppercase tracking-widest block mb-2">
+                Autoplay
+              </label>
+              {autoplayActive ? (
+                <div className="flex items-center gap-3">
+                  <button onClick={stopAutoplay}
+                    className="flex-1 py-2.5 rounded-lg text-sm font-mono bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-colors">
+                    STOP AUTOPLAY
+                  </button>
+                  <span className="text-xs font-mono text-casino-muted shrink-0">
+                    {autoplayMode === "infinite"
+                      ? "∞ rounds"
+                      : `${autoplayLeft} left`}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  {[10, 20, 50].map(n => (
+                    <button key={n} onClick={() => startAutoplay(n)}
+                      disabled={alreadyIn}
+                      className="flex-1 py-2 rounded-lg text-xs font-mono bg-casino-surface border border-casino-border text-casino-muted hover:text-white hover:border-gold/30 transition-colors disabled:opacity-40">
+                      {n}
+                    </button>
+                  ))}
+                  <button onClick={() => startAutoplay("infinite")}
+                    disabled={alreadyIn}
+                    className="flex-1 py-2 rounded-lg text-xs font-mono bg-casino-surface border border-casino-border text-casino-muted hover:text-white hover:border-gold/30 transition-colors disabled:opacity-40">
+                    ∞
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Action button */}

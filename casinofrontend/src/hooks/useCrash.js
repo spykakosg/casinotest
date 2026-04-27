@@ -20,6 +20,7 @@ export function useCrash(token) {
   const [myQueuedBet, setMyQueuedBet]       = useState(null);   // queued for next
   const [error, setError]                   = useState("");
   const [connected, setConnected]           = useState(false);
+  const myUsernameRef                       = useRef(null);
 
   // Countdown: ms remaining in waiting phase
   const [countdown, setCountdown]           = useState(0);
@@ -77,6 +78,10 @@ export function useCrash(token) {
 
     socket.onmessage = (e) => {
       const msg = JSON.parse(e.data);
+
+      if (msg.type === "auth_ok") {
+        myUsernameRef.current = msg.username;
+      }
 
       if (msg.type === "init") {
         setGameState(msg.state);
@@ -142,6 +147,13 @@ export function useCrash(token) {
             ? { ...b, cashedOut: true, payout: msg.payout, cashoutAt: msg.multiplier }
             : b
         ));
+        // Update myBet when auto cashout fires for us
+        if (msg.username === myUsernameRef.current) {
+          setMyBet(prev => prev && !prev.cashedOut
+            ? { ...prev, cashedOut: true, payout: msg.payout, cashoutAt: msg.multiplier }
+            : prev
+          );
+        }
       }
 
       if (msg.type === "bet_accepted") {
