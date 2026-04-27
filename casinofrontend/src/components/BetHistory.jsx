@@ -38,13 +38,15 @@ export default function BetHistory({ history, currency, onLoadMore }) {
 
 function BetRow({ bet }) {
   const won = bet.won;
+  const amount = bet.betAmount ?? bet.bet_amount;
+  const roll = typeof bet.roll === "number" ? bet.roll : parseFloat(bet.roll);
   return (
     <div className={`px-4 py-3 flex items-center gap-3 hover:bg-casino-surface/50 transition-colors ${
       won ? "border-l-2 border-green-500/40" : "border-l-2 border-red-500/20"
     }`}>
       {/* Roll */}
       <div className={`font-mono font-bold text-sm w-12 shrink-0 ${won ? "text-green-400" : "text-red-400"}`}>
-        {typeof bet.roll === "number" ? bet.roll.toFixed(2) : "—"}
+        {!isNaN(roll) ? roll.toFixed(2) : "—"}
       </div>
 
       {/* Details */}
@@ -53,7 +55,7 @@ function BetRow({ bet }) {
           {bet.direction} {bet.target} · {bet.multiplier}×
         </div>
         <div className="text-xs text-casino-muted/60 font-mono">
-          {bet.betAmount} → {won ? parseFloat(bet.payout).toFixed(2) : "0"}
+          {amount} → {won ? parseFloat(bet.payout).toFixed(2) : "0"}
         </div>
       </div>
 
@@ -61,7 +63,7 @@ function BetRow({ bet }) {
       <div className={`text-xs font-mono font-semibold shrink-0 ${
         won ? "text-green-400" : "text-red-400"
       }`}>
-        {won ? `+${(parseFloat(bet.payout) - parseFloat(bet.betAmount)).toFixed(2)}` : `-${bet.betAmount}`}
+        {won ? `+${(parseFloat(bet.payout) - parseFloat(amount)).toFixed(2)}` : `-${amount}`}
       </div>
     </div>
   );
