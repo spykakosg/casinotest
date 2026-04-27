@@ -402,7 +402,7 @@ async function placeSlotsBet(db, { userId, currency, betAmount }) {
 
     const betRes = await client.query(
       `INSERT INTO bets (user_id, currency, game, bet_amount, payout, profit, won, multiplier, server_seed_hash, client_seed, nonce, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, NOW()) RETURNING id`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, NOW()) RETURNING id`,
       [userId, currency, "slots", betAmount, result.payout, result.profit, result.won,
        result.multiplier, hashServerSeed(wallet.server_seed), wallet.client_seed, wallet.nonce]
     );

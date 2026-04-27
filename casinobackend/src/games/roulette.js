@@ -21,6 +21,8 @@ const BLACK_NUMBERS = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35];
 
 const BET_TYPES = {
   straight: { payout: 36, description: "Single number" },
+  split:    { payout: 18, description: "Two numbers" },
+  corner:   { payout: 9,  description: "Four numbers" },
   red:      { payout: 2,  description: "Red" },
   black:    { payout: 2,  description: "Black" },
   odd:      { payout: 2,  description: "Odd" },
@@ -61,6 +63,14 @@ function getDozen(n) {
 function checkWin(betType, betValue, result) {
   switch (betType) {
     case "straight": return result === parseInt(betValue);
+    case "split": {
+      const nums = String(betValue).split(",").map(Number);
+      return nums.includes(result);
+    }
+    case "corner": {
+      const nums = String(betValue).split(",").map(Number);
+      return nums.includes(result);
+    }
     case "red":      return RED_NUMBERS.includes(result);
     case "black":    return BLACK_NUMBERS.includes(result);
     case "odd":      return result > 0 && result % 2 === 1;
@@ -107,6 +117,18 @@ function validateRouletteBet({ betAmount, betType, betValue, balance }) {
     const num = parseInt(betValue);
     if (isNaN(num) || num < 0 || num > 36) {
       return { valid: false, error: "Straight bet must be 0-36" };
+    }
+  }
+  if (betType === "split") {
+    const nums = String(betValue).split(",").map(Number);
+    if (nums.length !== 2 || nums.some(n => isNaN(n) || n < 0 || n > 36)) {
+      return { valid: false, error: "Split bet must be two numbers 0-36" };
+    }
+  }
+  if (betType === "corner") {
+    const nums = String(betValue).split(",").map(Number);
+    if (nums.length !== 4 || nums.some(n => isNaN(n) || n < 1 || n > 36)) {
+      return { valid: false, error: "Corner bet must be four numbers 1-36" };
     }
   }
   return { valid: true };

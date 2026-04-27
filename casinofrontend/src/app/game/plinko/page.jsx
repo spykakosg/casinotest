@@ -29,6 +29,7 @@ const MULTIPLIERS = {
 function PlinkoBoard({ rows, path, bucket, risk, animating }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
+  const trailRef = useRef([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,50 +37,110 @@ function PlinkoBoard({ rows, path, bucket, risk, animating }) {
     const ctx = canvas.getContext("2d");
     const W = canvas.width;
     const H = canvas.height;
-    const pegRadius = 2;
-    const pegSpacingY = (H - 50) / rows;
+    const pegRadius = 3;
+    const pegSpacingY = (H - 55) / rows;
     const multipliers = MULTIPLIERS[rows]?.[risk] || [];
 
     function getPegX(row, col) {
       const cols = row + 1;
-      const totalWidth = cols * 20;
-      const startX = (W - totalWidth) / 2 + 10;
-      return startX + col * 20;
+      const totalWidth = cols * 22;
+      const startX = (W - totalWidth) / 2 + 11;
+      return startX + col * 22;
     }
 
-    function drawBoard(ballRow, ballCol) {
+    function drawBoard(ballRow, ballCol, hitPeg) {
       ctx.clearRect(0, 0, W, H);
 
-      // Draw pegs
+      // Background gradient
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "rgba(15, 23, 42, 0.3)");
+      bg.addColorStop(1, "rgba(15, 23, 42, 0.6)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw trail
+      for (let t = 0; t < trailRef.current.length; t++) {
+        const trail = trailRef.current[t];
+        const alpha = (t / trailRef.current.length) * 0.4;
+        ctx.beginPath();
+        ctx.arc(trail.x, trail.y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(234, 179, 8, ${alpha})`;
+        ctx.fill();
+      }
+
+      // Draw pegs with glow
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c <= r; c++) {
           const x = getPegX(r, c);
           const y = 30 + r * pegSpacingY;
+          const isHit = hitPeg && hitPeg.row === r && hitPeg.col === c;
+
+          if (isHit) {
+            // Glow effect on hit peg
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(234, 179, 8, 0.3)";
+            ctx.fill();
+          }
+
           ctx.beginPath();
           ctx.arc(x, y, pegRadius, 0, Math.PI * 2);
-          ctx.fillStyle = "#4a5568";
+          const gradient = ctx.createRadialGradient(x - 1, y - 1, 0, x, y, pegRadius);
+          gradient.addColorStop(0, isHit ? "#fbbf24" : "#94a3b8");
+          gradient.addColorStop(1, isHit ? "#d97706" : "#475569");
+          ctx.fillStyle = gradient;
           ctx.fill();
         }
       }
 
-      // Draw buckets
+      // Draw buckets with gradients
       const bucketCount = rows + 1;
       const bucketW = W / bucketCount;
       for (let i = 0; i < bucketCount; i++) {
         const x = i * bucketW;
-        const y = H - 24;
+        const y = H - 26;
         const m = multipliers[i] || 0;
         const isHit = bucket === i && !animating;
 
-        ctx.fillStyle = isHit ? "#eab308" : m >= 2 ? "#22c55e33" : m >= 1 ? "#3b82f633" : "#ef444433";
-        ctx.fillRect(x + 1, y, bucketW - 2, 22);
-        ctx.fillStyle = isHit ? "#000" : "#9ca3af";
-        ctx.font = "bold 9px monospace";
+        // Bucket gradient
+        const bucketGrad = ctx.createLinearGradient(x, y, x, y + 24);
+        if (isHit) {
+          bucketGrad.addColorStop(0, "rgba(234, 179, 8, 0.8)");
+          bucketGrad.addColorStop(1, "rgba(234, 179, 8, 0.4)");
+        } else if (m >= 5) {
+          bucketGrad.addColorStop(0, "rgba(34, 197, 94, 0.4)");
+          bucketGrad.addColorStop(1, "rgba(34, 197, 94, 0.15)");
+        } else if (m >= 1) {
+          bucketGrad.addColorStop(0, "rgba(59, 130, 246, 0.3)");
+          bucketGrad.addColorStop(1, "rgba(59, 130, 246, 0.1)");
+        } else {
+          bucketGrad.addColorStop(0, "rgba(239, 68, 68, 0.3)");
+          bucketGrad.addColorStop(1, "rgba(239, 68, 68, 0.1)");
+        }
+
+        // Rounded bucket
+        const bx = x + 1.5, by = y, bw = bucketW - 3, bh = 24, br = 4;
+        ctx.beginPath();
+        ctx.moveTo(bx + br, by);
+        ctx.lineTo(bx + bw - br, by);
+        ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+        ctx.lineTo(bx + bw, by + bh - br);
+        ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+        ctx.lineTo(bx + br, by + bh);
+        ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+        ctx.lineTo(bx, by + br);
+        ctx.quadraticCurveTo(bx, by, bx + br, by);
+        ctx.closePath();
+        ctx.fillStyle = bucketGrad;
+        ctx.fill();
+
+        ctx.fillStyle = isHit ? "#000" : m >= 5 ? "#4ade80" : m >= 1 ? "#93c5fd" : "#f87171";
+        ctx.font = `bold ${bucketW > 25 ? 10 : 8}px monospace`;
         ctx.textAlign = "center";
-        ctx.fillText(`${m}x`, x + bucketW / 2, y + 15);
+        ctx.fillText(`${m}x`, x + bucketW / 2, y + 16);
       }
 
-      // Draw ball
+      // Draw ball with glow
       if (ballRow !== null && ballRow !== undefined) {
         let bx, by;
         if (ballRow < rows) {
@@ -88,51 +149,62 @@ function PlinkoBoard({ rows, path, bucket, risk, animating }) {
         } else {
           const bucketW2 = W / (rows + 1);
           bx = ballCol * bucketW2 + bucketW2 / 2;
-          by = H - 35;
+          by = H - 38;
         }
+
+        // Glow
         ctx.beginPath();
-        ctx.arc(bx, by, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#eab308";
+        ctx.arc(bx, by, 12, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(234, 179, 8, 0.15)";
         ctx.fill();
-        ctx.strokeStyle = "#fbbf24";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+
+        // Ball
+        const ballGrad = ctx.createRadialGradient(bx - 2, by - 2, 0, bx, by, 7);
+        ballGrad.addColorStop(0, "#fef08a");
+        ballGrad.addColorStop(0.5, "#eab308");
+        ballGrad.addColorStop(1, "#a16207");
+        ctx.beginPath();
+        ctx.arc(bx, by, 7, 0, Math.PI * 2);
+        ctx.fillStyle = ballGrad;
+        ctx.fill();
+
+        // Add to trail
+        trailRef.current.push({ x: bx, y: by });
+        if (trailRef.current.length > 12) trailRef.current.shift();
       }
     }
+
+    trailRef.current = [];
 
     if (animating && path && path.length > 0) {
       let step = 0;
       let col = 0;
+      let hitPeg = null;
       function animate() {
         if (step <= rows) {
-          drawBoard(step, col);
-          if (step < rows) {
-            col += path[step];
-          }
+          hitPeg = step < rows ? { row: step, col } : null;
+          drawBoard(step, col, hitPeg);
+          if (step < rows) col += path[step];
           step++;
-          animRef.current = requestAnimationFrame(() => {
-            setTimeout(animate, 80);
-          });
+          animRef.current = requestAnimationFrame(() => setTimeout(animate, 90));
         } else {
-          drawBoard(rows, bucket);
+          drawBoard(rows, bucket, null);
         }
       }
       animate();
     } else {
-      drawBoard(path ? rows : null, bucket);
+      drawBoard(path ? rows : null, bucket, null);
     }
 
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-    };
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
   }, [rows, path, bucket, risk, animating]);
 
   return (
     <canvas
       ref={canvasRef}
-      width={Math.max(200, (rows + 2) * 22)}
-      height={Math.min(rows * 20 + 60, 280)}
-      className="mx-auto"
+      width={Math.max(220, (rows + 2) * 24)}
+      height={Math.min(rows * 22 + 60, 300)}
+      className="mx-auto rounded-lg"
     />
   );
 }
@@ -154,6 +226,7 @@ export default function PlinkoPage() {
   const [balances, setBalances]   = useState({});
   const [history, setHistory]     = useState([]);
   const [historyPage, setHistoryPage] = useState(0);
+  const [lastMultiplier, setLastMultiplier] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -185,6 +258,7 @@ export default function PlinkoPage() {
     setPath(null);
     setBucket(null);
     setAnimating(false);
+    setLastMultiplier(null);
     try {
       const data = await placePlinkoBet({
         currency,
@@ -209,11 +283,11 @@ export default function PlinkoPage() {
         created_at: new Date().toISOString(),
       }, ...prev]);
 
-      // Stop animation after it completes
       setTimeout(() => {
         setAnimating(false);
         setDropping(false);
-      }, (rows + 2) * 100);
+        setLastMultiplier(bet.multiplier);
+      }, (rows + 2) * 110);
     } catch (err) {
       setError(err.message);
       setDropping(false);
@@ -226,8 +300,6 @@ export default function PlinkoPage() {
 
   if (authLoading) return <LoadingScreen />;
 
-  const multipliers = MULTIPLIERS[rows]?.[risk] || [];
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar balances={balances} activeCurrency={currency} onCurrencyChange={setCurrency} />
@@ -235,7 +307,6 @@ export default function PlinkoPage() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
 
-          {/* Plinko Board + Controls in single card */}
           <div className="bg-casino-card border border-casino-border rounded-2xl p-3 space-y-2 relative overflow-hidden">
             <div className="absolute inset-0 opacity-5"
               style={{backgroundImage:"radial-gradient(circle at 50% 50%, var(--gold) 0%, transparent 70%)"}} />
@@ -244,8 +315,10 @@ export default function PlinkoPage() {
               <PlinkoBoard rows={rows} path={path} bucket={bucket} risk={risk} animating={animating} />
 
               {result && !animating && (
-                <div className="text-center mt-1">
-                  <span className="text-gold font-bold">{result.multiplier}x</span>
+                <div className={`text-center mt-2 transition-all duration-500 ${lastMultiplier ? "scale-110" : ""}`}>
+                  <span className={`text-xl font-black ${result.multiplier >= 2 ? "text-gold" : result.multiplier >= 1 ? "text-blue-400" : "text-red-400"}`}>
+                    {result.multiplier}x
+                  </span>
                   <span className={`ml-2 text-sm font-mono ${result.profit >= 0 ? "text-green-400" : "text-red-400"}`}>
                     {result.profit >= 0 ? "+" : ""}{result.profit.toFixed(2)}
                   </span>
@@ -254,23 +327,18 @@ export default function PlinkoPage() {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-3 py-1.5 relative z-10">
-                {error}
-              </div>
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl px-3 py-1.5 relative z-10">{error}</div>
             )}
 
-            {/* Rows + Risk side by side */}
             <div className="grid grid-cols-2 gap-2 relative z-10">
               <div className="space-y-1">
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Rows</span>
                 <div className="flex gap-1">
                   {[8, 12, 16].map(r => (
-                    <button key={r} onClick={() => setRows(r)}
+                    <button key={r} onClick={() => setRows(r)} disabled={dropping}
                       className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                        rows === r
-                          ? "bg-gold/20 border-gold/50 text-gold"
-                          : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
-                      }`}>
+                        rows === r ? "bg-gold/20 border-gold/50 text-gold" : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
+                      } disabled:opacity-50`}>
                       {r}
                     </button>
                   ))}
@@ -280,12 +348,10 @@ export default function PlinkoPage() {
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Risk</span>
                 <div className="flex gap-1">
                   {["low", "medium", "high"].map(r => (
-                    <button key={r} onClick={() => setRisk(r)}
+                    <button key={r} onClick={() => setRisk(r)} disabled={dropping}
                       className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all border capitalize ${
-                        risk === r
-                          ? "bg-gold/20 border-gold/50 text-gold"
-                          : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
-                      }`}>
+                        risk === r ? "bg-gold/20 border-gold/50 text-gold" : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
+                      } disabled:opacity-50`}>
                       {r}
                     </button>
                   ))}
@@ -293,7 +359,6 @@ export default function PlinkoPage() {
               </div>
             </div>
 
-            {/* Bet amount + currency */}
             <div className="grid grid-cols-2 gap-2 relative z-10">
               <div className="space-y-1">
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Bet</span>
@@ -322,11 +387,7 @@ export default function PlinkoPage() {
         </div>
 
         <div className="space-y-4">
-          <BetHistory
-            title="Plinko History"
-            bets={history}
-            onLoadMore={() => setHistoryPage(p => p + 1)}
-          />
+          <BetHistory title="Plinko History" bets={history} onLoadMore={() => setHistoryPage(p => p + 1)} />
         </div>
       </main>
     </div>

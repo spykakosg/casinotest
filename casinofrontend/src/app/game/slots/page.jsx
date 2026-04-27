@@ -8,49 +8,42 @@ import { placeSlotsBet, getBalances, getSlotsBetHistory } from "@/lib/api";
 
 const CURRENCIES = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
 
-const SYMBOL_EMOJIS = {
-  seven:  "\u0037\ufe0f\u20e3",
-  bar:    "\ud83c\udfa8",
-  bell:   "\ud83d\udd14",
-  cherry: "\ud83c\udf52",
-  lemon:  "\ud83c\udf4b",
+const SYMBOL_MAP = {
+  seven:  { emoji: "7\ufe0f\u20e3", label: "7" },
+  bar:    { emoji: "\ud83c\udfa8", label: "BAR" },
+  bell:   { emoji: "\ud83d\udd14", label: "BELL" },
+  cherry: { emoji: "\ud83c\udf52", label: "CHRY" },
+  lemon:  { emoji: "\ud83c\udf4b", label: "LMON" },
 };
 
 const SYMBOL_LIST = ["seven", "bar", "bell", "cherry", "lemon"];
+const REEL_SPIN_EMOJIS = ["7\ufe0f\u20e3", "\ud83c\udfa8", "\ud83d\udd14", "\ud83c\udf52", "\ud83c\udf4b"];
 
-const PAYOUTS = [
-  { symbols: "7\ufe0f\u20e3 7\ufe0f\u20e3 7\ufe0f\u20e3", payout: "50x" },
-  { symbols: "\ud83c\udfa8 \ud83c\udfa8 \ud83c\udfa8", payout: "20x" },
-  { symbols: "\ud83d\udd14 \ud83d\udd14 \ud83d\udd14", payout: "10x" },
-  { symbols: "\ud83c\udf52 \ud83c\udf52 \ud83c\udf52", payout: "5x" },
-  { symbols: "\ud83c\udf4b \ud83c\udf4b \ud83c\udf4b", payout: "3x" },
-];
-
-function SlotReel({ symbol, spinning, delay = 0 }) {
-  const [displaySymbol, setDisplaySymbol] = useState(symbol);
+function SlotCell({ symbol, spinning, won }) {
+  const [display, setDisplay] = useState(symbol);
   const intervalRef = useRef(null);
 
   useEffect(() => {
     if (spinning) {
-      const timeout = setTimeout(() => {
-        intervalRef.current = setInterval(() => {
-          const rand = SYMBOL_LIST[Math.floor(Math.random() * SYMBOL_LIST.length)];
-          setDisplaySymbol(rand);
-        }, 80);
-      }, delay);
-      return () => {
-        clearTimeout(timeout);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      };
+      intervalRef.current = setInterval(() => {
+        setDisplay(SYMBOL_LIST[Math.floor(Math.random() * SYMBOL_LIST.length)]);
+      }, 60);
+      return () => clearInterval(intervalRef.current);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      setDisplaySymbol(symbol);
+      setDisplay(symbol);
     }
-  }, [spinning, symbol, delay]);
+  }, [spinning, symbol]);
+
+  const info = SYMBOL_MAP[display] || SYMBOL_MAP.lemon;
 
   return (
-    <div className="w-20 h-20 bg-casino-surface border-2 border-casino-border rounded-xl flex items-center justify-center text-4xl transition-transform">
-      {SYMBOL_EMOJIS[displaySymbol] || "\u2753"}
+    <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-2xl sm:text-3xl transition-all duration-300 ${
+      won ? "bg-gold/20 border-2 border-gold shadow-lg shadow-gold/30 scale-110" :
+      spinning ? "bg-casino-surface/80 border border-casino-border animate-pulse" :
+      "bg-casino-surface border border-casino-border"
+    }`}>
+      <span className={`${spinning ? "animate-bounce" : ""}`}>{info.emoji}</span>
     </div>
   );
 }
@@ -69,7 +62,8 @@ export default function SlotsPage() {
   const [history, setHistory]     = useState([]);
   const [historyPage, setHistoryPage] = useState(0);
   const [showPaytable, setShowPaytable] = useState(false);
-  const [reelSpinning, setReelSpinning] = useState([false, false, false]);
+  const [reelStates, setReelStates] = useState([false, false, false, false, false]);
+  const [winAnim, setWinAnim]     = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -98,7 +92,8 @@ export default function SlotsPage() {
     setError("");
     setSpinning(true);
     setResult(null);
-    setReelSpinning([true, true, true]);
+    setWinAnim(false);
+    setReelStates([true, true, true, true, true]);
 
     try {
       const data = await placeSlotsBet({
@@ -107,19 +102,28 @@ export default function SlotsPage() {
       });
       const bet = data.bet;
 
-      // Stop reels sequentially
+      // Stop reels sequentially with delays
+      const delays = [500, 800, 1100, 1400, 1700];
+      delays.forEach((delay, col) => {
+        setTimeout(() => {
+          setGrid(bet.grid);
+          setReelStates(prev => {
+            const next = [...prev];
+            next[col] = false;
+            return next;
+          });
+        }, delay);
+      });
+
+      // Final result after all reels stop
       setTimeout(() => {
-        setGrid(bet.grid);
-        setReelSpinning(prev => [false, prev[1], prev[2]]);
-      }, 600);
-      setTimeout(() => {
-        setReelSpinning(prev => [prev[0], false, prev[2]]);
-      }, 1000);
-      setTimeout(() => {
-        setReelSpinning([false, false, false]);
         setResult(bet);
         setSpinning(false);
         setBalances(prev => ({ ...prev, [currency]: data.balance }));
+        if (bet.won) {
+          setWinAnim(true);
+          setTimeout(() => setWinAnim(false), 3000);
+        }
         setHistory(prev => [{
           id: bet.betId,
           game: "slots",
@@ -130,11 +134,11 @@ export default function SlotsPage() {
           multiplier: bet.multiplier,
           created_at: new Date().toISOString(),
         }, ...prev]);
-      }, 1400);
+      }, 2000);
     } catch (err) {
       setError(err.message);
       setSpinning(false);
-      setReelSpinning([false, false, false]);
+      setReelStates([false, false, false, false, false]);
     }
   }
 
@@ -144,12 +148,30 @@ export default function SlotsPage() {
 
   if (authLoading) return <LoadingScreen />;
 
-  // Default display grid
   const displayGrid = grid || [
-    [{ name: "cherry" }, { name: "bell" }, { name: "seven" }],
-    [{ name: "lemon" }, { name: "cherry" }, { name: "bar" }],
-    [{ name: "bell" }, { name: "seven" }, { name: "lemon" }],
+    [{ name: "cherry" }, { name: "bell" }, { name: "seven" }, { name: "lemon" }, { name: "bar" }],
+    [{ name: "lemon" }, { name: "cherry" }, { name: "bar" }, { name: "bell" }, { name: "cherry" }],
+    [{ name: "bell" }, { name: "seven" }, { name: "lemon" }, { name: "cherry" }, { name: "lemon" }],
   ];
+
+  // Determine which cells are on the winning line
+  const winningCells = new Set();
+  if (result?.won && result.winningLine >= 0) {
+    const linePatterns = [
+      [[0,0],[0,1],[0,2],[0,3],[0,4]],
+      [[1,0],[1,1],[1,2],[1,3],[1,4]],
+      [[2,0],[2,1],[2,2],[2,3],[2,4]],
+      [[0,0],[1,1],[2,2],[1,3],[0,4]],
+      [[2,0],[1,1],[0,2],[1,3],[2,4]],
+    ];
+    const pattern = linePatterns[result.winningLine];
+    if (pattern) {
+      const matchCount = result.matchCount || 3;
+      for (let i = 0; i < matchCount; i++) {
+        winningCells.add(`${pattern[i][0]}-${pattern[i][1]}`);
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -159,56 +181,80 @@ export default function SlotsPage() {
         <div className="lg:col-span-2 space-y-3">
 
           {/* Slot Machine */}
-          <div className="bg-casino-card border border-casino-border rounded-2xl p-4 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-5"
-              style={{backgroundImage:"radial-gradient(circle at 50% 50%, var(--gold) 0%, transparent 70%)"}} />
+          <div className={`bg-casino-card border rounded-2xl p-4 relative overflow-hidden transition-all duration-500 ${
+            winAnim ? "border-gold shadow-lg shadow-gold/20" : "border-casino-border"
+          }`}>
+            {/* Decorative lights */}
+            {winAnim && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 animate-pulse" />
+              </div>
+            )}
 
-            {/* Machine frame */}
             <div className="relative z-10">
               <div className="text-center mb-3">
-                <h2 className="text-lg font-black text-gold tracking-wider">SLOT MACHINE</h2>
-                <p className="text-xs text-casino-muted">5% House Edge &bull; 5 Paylines</p>
+                <h2 className={`text-xl font-black tracking-wider transition-colors ${winAnim ? "text-gold animate-pulse" : "text-gold"}`}>
+                  MEGA SLOTS
+                </h2>
               </div>
 
-              {/* Reels */}
-              <div className="bg-black/30 rounded-xl p-3 border border-gold/20">
-                {displayGrid.map((row, rowIdx) => (
-                  <div key={rowIdx} className={`flex items-center justify-center gap-2 py-1 ${
-                    result?.winningLine === rowIdx ? "bg-gold/10 rounded-lg" :
-                    result?.winningLine === 3 && rowIdx === 0 ? "" :
-                    result?.winningLine === 4 && rowIdx === 2 ? "" : ""
-                  }`}>
-                    {/* Row indicator */}
-                    <div className="w-6 text-xs text-casino-muted/40 font-mono text-right shrink-0">
-                      {rowIdx === 1 ? "\u25b6" : ""}
+              {/* Machine body */}
+              <div className="bg-gradient-to-b from-gray-900 to-black rounded-xl p-3 border border-gold/20 relative">
+                {/* Top light bar */}
+                <div className="flex justify-center gap-1 mb-2">
+                  {Array(9).fill(0).map((_, i) => (
+                    <div key={i} className={`w-2 h-2 rounded-full transition-all ${
+                      spinning || winAnim
+                        ? i % 2 === 0 ? "bg-red-500 animate-pulse" : "bg-yellow-500 animate-pulse"
+                        : "bg-gray-700"
+                    }`} style={{ animationDelay: `${i * 100}ms` }} />
+                  ))}
+                </div>
+
+                {/* Reels area */}
+                <div className="bg-black/50 rounded-lg p-2 border border-gray-800">
+                  {displayGrid.map((row, rowIdx) => (
+                    <div key={rowIdx} className="flex items-center justify-center gap-1.5 sm:gap-2 py-0.5">
+                      {row.map((sym, colIdx) => (
+                        <SlotCell
+                          key={`${rowIdx}-${colIdx}`}
+                          symbol={sym.name}
+                          spinning={reelStates[colIdx]}
+                          won={winningCells.has(`${rowIdx}-${colIdx}`)}
+                        />
+                      ))}
                     </div>
-                    {row.map((sym, colIdx) => (
-                      <SlotReel
-                        key={`${rowIdx}-${colIdx}`}
-                        symbol={sym.name}
-                        spinning={reelSpinning[colIdx]}
-                        delay={colIdx * 100}
-                      />
-                    ))}
-                    <div className="w-6 text-xs text-casino-muted/40 font-mono shrink-0">
-                      {rowIdx === 1 ? "\u25c0" : ""}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                {/* Bottom light bar */}
+                <div className="flex justify-center gap-1 mt-2">
+                  {Array(9).fill(0).map((_, i) => (
+                    <div key={i} className={`w-2 h-2 rounded-full transition-all ${
+                      spinning || winAnim
+                        ? i % 2 === 1 ? "bg-green-500 animate-pulse" : "bg-blue-500 animate-pulse"
+                        : "bg-gray-700"
+                    }`} style={{ animationDelay: `${i * 150}ms` }} />
+                  ))}
+                </div>
               </div>
 
               {/* Result */}
               {result && (
-                <div className="text-center mt-3">
+                <div className={`text-center mt-3 transition-all duration-500 ${winAnim ? "scale-110" : ""}`}>
                   {result.won ? (
                     <>
-                      <p className="text-xl font-bold text-green-400">
+                      <p className={`text-2xl font-black ${winAnim ? "text-gold animate-pulse" : "text-green-400"}`}>
                         WIN! {result.multiplier}x
                       </p>
                       <p className="text-green-400 font-mono text-sm">+{result.profit.toFixed(2)}</p>
+                      {result.matchCount && (
+                        <p className="text-xs text-casino-muted mt-1">{result.matchCount}-of-a-kind!</p>
+                      )}
                     </>
                   ) : (
-                    <p className="text-casino-muted text-sm">No win this spin</p>
+                    <p className="text-casino-muted text-sm">No match — try again!</p>
                   )}
                 </div>
               )}
@@ -248,21 +294,35 @@ export default function SlotsPage() {
             </div>
 
             {showPaytable && (
-              <div className="bg-casino-surface rounded-lg p-2 space-y-1">
-                <p className="text-xs text-casino-muted font-mono uppercase tracking-widest mb-1">Paytable</p>
-                {PAYOUTS.map((p, i) => (
-                  <div key={i} className="flex justify-between text-xs">
-                    <span>{p.symbols}</span>
-                    <span className="text-gold font-mono">{p.payout}</span>
+              <div className="bg-casino-surface rounded-lg p-3 space-y-1.5 border border-casino-border">
+                <p className="text-xs text-gold font-mono uppercase tracking-widest mb-2">Paytable</p>
+                <div className="grid grid-cols-4 gap-1 text-xs text-casino-muted">
+                  <span>Symbol</span><span className="text-center">3x</span><span className="text-center">4x</span><span className="text-center">5x</span>
+                </div>
+                {[
+                  { e: "7\ufe0f\u20e3", p3: "10x", p4: "25x", p5: "100x" },
+                  { e: "\ud83c\udfa8", p3: "5x", p4: "15x", p5: "50x" },
+                  { e: "\ud83d\udd14", p3: "3x", p4: "8x", p5: "25x" },
+                  { e: "\ud83c\udf52", p3: "2x", p4: "4x", p5: "10x" },
+                  { e: "\ud83c\udf4b", p3: "1x", p4: "2x", p5: "5x" },
+                ].map((p, i) => (
+                  <div key={i} className="grid grid-cols-4 gap-1 text-xs">
+                    <span className="text-lg">{p.e}</span>
+                    <span className="text-center text-gold">{p.p3}</span>
+                    <span className="text-center text-gold">{p.p4}</span>
+                    <span className="text-center text-gold">{p.p5}</span>
                   </div>
                 ))}
-                <p className="text-[10px] text-casino-muted mt-1">2-of-a-kind on first two symbols also pays. Best payline wins.</p>
               </div>
             )}
 
             <button onClick={handleSpin} disabled={spinning}
-              className="w-full py-3 rounded-xl font-bold text-sm transition-all bg-gradient-to-r from-gold to-yellow-500 text-black hover:shadow-lg hover:shadow-gold/20 disabled:opacity-50 disabled:cursor-not-allowed">
-              {spinning ? "Spinning..." : "Spin"}
+              className={`w-full py-3 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                spinning
+                  ? "bg-gray-600 text-gray-300"
+                  : "bg-gradient-to-r from-red-600 via-gold to-red-600 text-black hover:shadow-lg hover:shadow-gold/30 animate-[shimmer_3s_infinite]"
+              }`}>
+              {spinning ? "Spinning..." : "SPIN"}
             </button>
           </div>
         </div>

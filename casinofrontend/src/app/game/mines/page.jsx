@@ -253,13 +253,22 @@ export default function MinesPage() {
                   </div>
                   <div className="space-y-1">
                     <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Mines ({mineCount})</span>
-                    <input type="range" min={1} max={24} value={mineCount} onChange={e => setMineCount(parseInt(e.target.value))}
-                      className="w-full accent-gold" />
-                    <div className="flex justify-between">
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setMineCount(m => Math.max(1, m - 1))}
+                        className="w-8 h-8 bg-casino-surface border border-casino-border rounded-lg text-casino-muted hover:text-white text-lg flex items-center justify-center">-</button>
+                      <input type="number" min={1} max={24} value={mineCount} onChange={e => {
+                        const v = parseInt(e.target.value);
+                        if (v >= 1 && v <= 24) setMineCount(v);
+                      }}
+                        className="flex-1 bg-casino-surface border border-casino-border rounded-lg px-3 py-1.5 text-white font-mono text-sm text-center focus:outline-none focus:border-gold/50" />
+                      <button onClick={() => setMineCount(m => Math.min(24, m + 1))}
+                        className="w-8 h-8 bg-casino-surface border border-casino-border rounded-lg text-casino-muted hover:text-white text-lg flex items-center justify-center">+</button>
+                    </div>
+                    <div className="flex gap-1">
                       {[1, 3, 5, 10, 24].map(n => (
                         <button key={n} onClick={() => setMineCount(n)}
-                          className={`text-xs px-1.5 py-0.5 rounded transition-all ${
-                            mineCount === n ? "text-gold bg-gold/10" : "text-casino-muted hover:text-white"
+                          className={`flex-1 py-0.5 rounded text-xs font-bold transition-all border ${
+                            mineCount === n ? "bg-gold/20 border-gold/50 text-gold" : "bg-casino-surface border-casino-border text-casino-muted hover:text-white"
                           }`}>
                           {n}
                         </button>
