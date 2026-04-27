@@ -274,10 +274,8 @@ export default function CrashPage() {
                   <div
                     role="switch"
                     aria-checked={autoCashoutOn}
-                    onClick={() => !alreadyIn && setAutoCashoutOn(v => !v)}
-                    className={`relative w-9 h-[18px] rounded-full cursor-pointer transition-colors duration-200 ${
-                      alreadyIn ? "opacity-40 cursor-not-allowed" : ""
-                    } ${autoCashoutOn ? "bg-gold" : "bg-casino-muted"}`}
+                    onClick={() => setAutoCashoutOn(v => !v)}
+                    className={`relative w-9 h-[18px] rounded-full cursor-pointer transition-colors duration-200 ${autoCashoutOn ? "bg-gold" : "bg-casino-muted"}`}
                   >
                     <span className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-white rounded-full shadow transition-transform duration-200 ${
                       autoCashoutOn ? "translate-x-[18px]" : "translate-x-0"
@@ -288,7 +286,7 @@ export default function CrashPage() {
                   type="number" min="1.01" step="0.1"
                   value={autoCashout}
                   onChange={e => setAutoCashout(e.target.value)}
-                  disabled={!autoCashoutOn || alreadyIn}
+                  disabled={!autoCashoutOn}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors disabled:opacity-40"
                 />
                 <p className="text-casino-muted text-[10px] mt-1 font-mono">

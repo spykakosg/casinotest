@@ -74,7 +74,7 @@ export function useCrash(token) {
       stopCountdown();
     };
 
-    socket.onerror = () => setError("Connection failed — refresh to reconnect");
+    socket.onerror = () => {};
 
     socket.onmessage = (e) => {
       const msg = JSON.parse(e.data);
