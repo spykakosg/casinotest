@@ -1,28 +1,29 @@
 "use client";
 
-export default function BetHistory({ history, currency, onLoadMore }) {
+export default function BetHistory({ history, bets, title, currency, onLoadMore }) {
+  const items = history || bets || [];
   return (
     <div className="bg-casino-card border border-casino-border rounded-2xl overflow-hidden h-full flex flex-col">
       <div className="px-4 py-3 border-b border-casino-border flex items-center justify-between">
-        <h3 className="text-sm font-mono uppercase tracking-widest text-casino-muted">Bet History</h3>
-        <span className="text-xs text-casino-muted">{history.length} bets</span>
+        <h3 className="text-sm font-mono uppercase tracking-widest text-casino-muted">{title || "Bet History"}</h3>
+        <span className="text-xs text-casino-muted">{items.length} bets</span>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {history.length === 0 ? (
+        {items.length === 0 ? (
           <div className="flex items-center justify-center h-32 text-casino-muted text-sm font-mono">
             No bets yet
           </div>
         ) : (
           <div className="divide-y divide-casino-border">
-            {history.map((bet, i) => (
+            {items.map((bet, i) => (
               <BetRow key={bet.id ?? i} bet={bet} />
             ))}
           </div>
         )}
       </div>
 
-      {history.length >= 20 && (
+      {items.length >= 20 && (
         <div className="p-3 border-t border-casino-border">
           <button
             onClick={onLoadMore}
