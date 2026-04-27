@@ -6,6 +6,7 @@
  * GET  /api/admin/users               - List users
  * GET  /api/admin/users/:id           - Single user detail
  * PUT  /api/admin/users/:id/ban       - Ban/unban user
+ * PUT  /api/admin/users/:id/credit    - Credit funds to user wallet
  * GET  /api/admin/withdrawals/pending - Pending withdrawals
  * PUT  /api/admin/withdrawals/:id     - Approve or reject withdrawal
  */
@@ -113,6 +114,41 @@ router.put("/users/:id/ban", async (req, res) => {
   try {
     await req.db.query("UPDATE users SET is_banned = $1 WHERE id = $2", [banned, req.params.id]);
     return res.json({ success: true, banned });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Credit Funds to User ─────────────────────────────────────────────────────
+router.put("/users/:id/credit", async (req, res) => {
+  const { currency, amount } = req.body;
+  const VALID_CURRENCIES = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
+
+  if (!currency || !VALID_CURRENCIES.includes(currency)) {
+    return res.status(400).json({ error: `currency must be one of: ${VALID_CURRENCIES.join(", ")}` });
+  }
+  const creditAmount = parseFloat(amount);
+  if (!amount || isNaN(creditAmount) || creditAmount <= 0) {
+    return res.status(400).json({ error: "amount must be a positive number" });
+  }
+
+  try {
+    const walletRes = await req.db.query(
+      "UPDATE wallets SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2 AND currency = $3 RETURNING balance",
+      [creditAmount, req.params.id, currency]
+    );
+
+    if (walletRes.rows.length === 0) {
+      return res.status(404).json({ error: `No ${currency} wallet found for user ${req.params.id}` });
+    }
+
+    return res.json({
+      success: true,
+      userId: parseInt(req.params.id),
+      currency,
+      credited: creditAmount,
+      newBalance: parseFloat(walletRes.rows[0].balance),
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
