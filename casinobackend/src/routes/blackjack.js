@@ -14,6 +14,7 @@ const crypto = require("crypto");
 const { hashServerSeed } = require("../engine/rng");
 const { dealInitialHands, drawCard, handValue, isBlackjack, cardValue } = require("../games/blackjack");
 const auth = require("../middleware/auth");
+const { validateMaxBet } = require("../engine/maxBet");
 
 // In-memory game sessions — { gameId: { userId, wallet, cards, ... } }
 const games = new Map();
@@ -45,6 +46,9 @@ router.post("/deal", auth, async (req, res) => {
   if (isNaN(amount) || amount <= 0) {
     return res.status(400).json({ error: "betAmount must be positive" });
   }
+
+  const maxCheck = await validateMaxBet(currency, amount);
+  if (!maxCheck.valid) return res.status(400).json({ error: maxCheck.error });
 
   const client = await req.db.connect();
   try {

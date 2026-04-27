@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import {
   adminGetStats, adminGetUsers, adminGetUser,
-  adminBanUser, adminCreditUser,
+  adminBanUser, adminCreditUser, adminResetPnl,
   adminGetPendingWithdrawals, adminProcessWithdrawal,
 } from "@/lib/api";
 
@@ -77,6 +77,8 @@ function StatsPanel() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => { fetchStats(); }, []);
 
@@ -89,6 +91,20 @@ function StatsPanel() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleReset() {
+    if (!confirmReset) { setConfirmReset(true); return; }
+    setResetting(true);
+    try {
+      await adminResetPnl();
+      setConfirmReset(false);
+      fetchStats();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -106,15 +122,41 @@ function StatsPanel() {
         <StatCard label="Total Wins" value={stats.bets.totalWins.toLocaleString()} />
       </div>
 
+      {/* All-time PnL */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <StatCard label="Total Wagered" value={`$${stats.bets.totalWagered.toFixed(2)}`} large />
         <StatCard
-          label="House Profit"
+          label="House Profit (All Time)"
           value={`$${stats.bets.houseProfit.toFixed(2)}`}
           color={stats.bets.houseProfit >= 0 ? "text-green-400" : "text-red-400"}
           large
         />
         <StatCard label="Pending Withdrawals" value={stats.pendingWithdrawals} large />
+      </div>
+
+      {/* Daily PnL */}
+      <div className="bg-casino-card border border-casino-border rounded-xl p-4">
+        <h3 className="text-sm font-mono text-casino-muted uppercase tracking-widest mb-3">Today&apos;s PnL</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-casino-surface rounded-lg p-3">
+            <div className="text-xs font-mono text-casino-muted">Bets Today</div>
+            <div className="text-white font-mono font-bold">{stats.daily.total.toLocaleString()}</div>
+          </div>
+          <div className="bg-casino-surface rounded-lg p-3">
+            <div className="text-xs font-mono text-casino-muted">Wagered Today</div>
+            <div className="text-white font-mono font-bold">${stats.daily.totalWagered.toFixed(2)}</div>
+          </div>
+          <div className="bg-casino-surface rounded-lg p-3">
+            <div className="text-xs font-mono text-casino-muted">House Profit Today</div>
+            <div className={`font-mono font-bold ${stats.daily.houseProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
+              ${stats.daily.houseProfit.toFixed(2)}
+            </div>
+          </div>
+          <div className="bg-casino-surface rounded-lg p-3">
+            <div className="text-xs font-mono text-casino-muted">Wins Today</div>
+            <div className="text-white font-mono font-bold">{stats.daily.totalWins.toLocaleString()}</div>
+          </div>
+        </div>
       </div>
 
       {/* Deposits by currency */}
@@ -131,6 +173,37 @@ function StatsPanel() {
           </div>
         </div>
       )}
+
+      {/* Reset button */}
+      <div className="bg-casino-card border border-casino-border rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-mono text-casino-muted uppercase tracking-widest">Reset PnL</h3>
+            <p className="text-xs text-casino-muted mt-1">Deletes all bet records. This cannot be undone.</p>
+          </div>
+          <div className="flex gap-2">
+            {confirmReset && (
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="px-3 py-1.5 rounded-lg text-xs font-mono text-casino-muted hover:text-white border border-casino-border transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={handleReset}
+              disabled={resetting}
+              className={`px-4 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all ${
+                confirmReset
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20"
+              }`}
+            >
+              {resetting ? "Resetting..." : confirmReset ? "Confirm Reset" : "Reset PnL"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

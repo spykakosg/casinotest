@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import BetHistory from "@/components/BetHistory";
 import { placeRouletteBet, getBalances, getRouletteBetHistory } from "@/lib/api";
+import * as BC from "@/lib/betConfig";
 
 const CURRENCIES = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
 const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
@@ -303,7 +304,7 @@ export default function RoulettePage() {
   const router = useRouter();
 
   const [currency, setCurrency]   = useState("USDT_POLYGON");
-  const [betAmount, setBetAmount] = useState("10");
+  const [betAmount, setBetAmount] = useState("1");
   const [betType, setBetType]     = useState(null);
   const [betValue, setBetValue]   = useState(null);
   const [spinning, setSpinning]   = useState(false);
@@ -368,6 +369,7 @@ export default function RoulettePage() {
         setHistory(prev => [{
           id: data.bet.betId,
           game: "roulette",
+          currency,
           roll: data.bet.result,
           bet_amount: data.bet.betAmount,
           payout: data.bet.payout,
@@ -409,12 +411,11 @@ export default function RoulettePage() {
     }
   }
 
-  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
-  const betDecimals = isCrypto ? 8 : 3;
-  const minBet = isCrypto ? 0.00000001 : 0.001;
-  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
+  useEffect(() => { BC.fetchPrices(); }, []);
+  useEffect(() => { setBetAmount(BC.defaultBet(currency)); }, [currency]);
+  function halfBet()   { setBetAmount(v => BC.halfBet(v, currency)); }
+  function doubleBet() { setBetAmount(v => BC.doubleBet(v, currency)); }
+  function maxBet()    { setBetAmount(BC.maxBetAmount(currency, balances[currency])); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -565,7 +566,7 @@ export default function RoulettePage() {
             <div className="flex gap-2 items-end">
               <div className="flex-1 space-y-0.5">
                 <span className="text-[10px] text-casino-muted font-mono uppercase">Bet</span>
-                <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)}
+                <input type="number" min={BC.minBet(currency)} step={BC.stepSize(currency)} value={betAmount} onChange={e => setBetAmount(e.target.value)}
                   className="w-full bg-casino-surface border border-casino-border rounded px-2 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-gold/50" />
                 <div className="flex gap-0.5">
                   <button onClick={halfBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-1 py-0.5 text-[10px] text-casino-muted hover:text-white">½</button>

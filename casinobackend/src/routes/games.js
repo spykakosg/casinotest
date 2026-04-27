@@ -17,6 +17,7 @@ const { MULTIPLIERS, VALID_ROWS, VALID_RISKS } = require("../games/plinko");
 const { MIN_TARGET, MAX_TARGET } = require("../games/limbo");
 const { rollDice, hashServerSeed } = require("../engine/rng");
 const auth = require("../middleware/auth");
+const { validateMaxBet } = require("../engine/maxBet");
 
 // ─── Dice: Place Bet ──────────────────────────────────────────────────────────
 router.post("/dice/bet", auth, async (req, res) => {
@@ -37,6 +38,9 @@ router.post("/dice/bet", auth, async (req, res) => {
   if (isNaN(amount) || amount <= 0) {
     return res.status(400).json({ error: "betAmount must be a positive number" });
   }
+
+  const maxCheck = await validateMaxBet(currency, amount);
+  if (!maxCheck.valid) return res.status(400).json({ error: maxCheck.error });
 
   try {
     const result = await placeDiceBet(req.db, {
@@ -135,6 +139,9 @@ router.post("/roulette/bet", auth, async (req, res) => {
     return res.status(400).json({ error: "betAmount must be a positive number" });
   }
 
+  const maxCheck2 = await validateMaxBet(currency, amount);
+  if (!maxCheck2.valid) return res.status(400).json({ error: maxCheck2.error });
+
   try {
     const result = await placeRouletteBet(req.db, {
       userId: req.user.id, currency, betAmount: amount, betType,
@@ -169,6 +176,9 @@ router.post("/plinko/bet", auth, async (req, res) => {
     return res.status(400).json({ error: "betAmount must be a positive number" });
   }
 
+  const maxCheck3 = await validateMaxBet(currency, amount);
+  if (!maxCheck3.valid) return res.status(400).json({ error: maxCheck3.error });
+
   try {
     const result = await placePlinkoBet(req.db, {
       userId: req.user.id, currency, betAmount: amount, rows: parseInt(rows), risk,
@@ -197,6 +207,9 @@ router.post("/limbo/bet", auth, async (req, res) => {
 
   const amount = parseFloat(betAmount);
   if (isNaN(amount) || amount <= 0) return res.status(400).json({ error: "betAmount must be positive" });
+
+  const maxCheck4 = await validateMaxBet(currency, amount);
+  if (!maxCheck4.valid) return res.status(400).json({ error: maxCheck4.error });
 
   const targetVal = parseFloat(target);
   if (isNaN(targetVal) || targetVal < MIN_TARGET || targetVal > MAX_TARGET) {
@@ -227,6 +240,9 @@ router.post("/slots/bet", auth, async (req, res) => {
 
   const amount = parseFloat(betAmount);
   if (isNaN(amount) || amount <= 0) return res.status(400).json({ error: "betAmount must be positive" });
+
+  const maxCheck5 = await validateMaxBet(currency, amount);
+  if (!maxCheck5.valid) return res.status(400).json({ error: maxCheck5.error });
 
   try {
     const result = await placeSlotsBet(req.db, {

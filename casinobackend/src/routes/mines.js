@@ -12,6 +12,7 @@ const crypto = require("crypto");
 const { hashServerSeed } = require("../engine/rng");
 const { generateMinePositions, calculateMultiplier, getNextMultiplier, validateMinesBet } = require("../games/mines");
 const auth = require("../middleware/auth");
+const { validateMaxBet } = require("../engine/maxBet");
 
 const games = new Map();
 const GAME_TTL = 10 * 60 * 1000;
@@ -36,6 +37,9 @@ router.post("/start", auth, async (req, res) => {
 
   const amount = parseFloat(betAmount);
   const mines = parseInt(mineCount);
+
+  const maxCheck = await validateMaxBet(currency, amount);
+  if (!maxCheck.valid) return res.status(400).json({ error: maxCheck.error });
 
   const client = await req.db.connect();
   try {
@@ -173,7 +177,7 @@ router.post("/reveal", auth, async (req, res) => {
     gameId, tileIndex: tile, isMine: false,
     revealed: session.revealed,
     currentMultiplier,
-    currentPayout: parseFloat((session.betAmount * currentMultiplier).toFixed(2)),
+    currentPayout: parseFloat((session.betAmount * currentMultiplier).toFixed(8)),
     nextMultiplier: getNextMultiplier(session.mineCount, session.revealed.length),
     gameOver: false,
   });

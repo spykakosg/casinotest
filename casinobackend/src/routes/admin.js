@@ -2,7 +2,8 @@
  * Admin Routes — /api/admin
  * All routes require role = "admin"
  *
- * GET  /api/admin/stats               - Platform overview
+ * GET  /api/admin/stats               - Platform overview (includes daily PnL)
+ * POST /api/admin/stats/reset          - Reset PnL tracking
  * GET  /api/admin/users               - List users
  * GET  /api/admin/users/:id           - Single user detail
  * PUT  /api/admin/users/:id/ban       - Ban/unban user
@@ -28,13 +29,18 @@ router.use(auth, adminOnly);
 // ─── Platform Stats ───────────────────────────────────────────────────────────
 router.get("/stats", async (req, res) => {
   try {
-    const [usersRes, betsRes, depositRes, withdrawalRes] = await Promise.all([
+    const [usersRes, betsRes, dailyBetsRes, depositRes, withdrawalRes] = await Promise.all([
       req.db.query("SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24h') AS last_24h FROM users"),
       req.db.query(`SELECT COUNT(*) AS total_bets,
                           SUM(bet_amount) AS total_wagered,
-                          SUM(profit) AS house_profit,
+                          -SUM(profit) AS house_profit,
                           COUNT(*) FILTER (WHERE won = true) AS total_wins
                    FROM bets`),
+      req.db.query(`SELECT COUNT(*) AS total_bets,
+                          SUM(bet_amount) AS total_wagered,
+                          -SUM(profit) AS house_profit,
+                          COUNT(*) FILTER (WHERE won = true) AS total_wins
+                   FROM bets WHERE created_at >= CURRENT_DATE`),
       req.db.query("SELECT currency, SUM(amount) AS total FROM deposits WHERE status = 'confirmed' GROUP BY currency"),
       req.db.query("SELECT COUNT(*) AS pending FROM withdrawals WHERE status = 'pending'"),
     ]);
@@ -50,9 +56,25 @@ router.get("/stats", async (req, res) => {
         houseProfit: parseFloat(betsRes.rows[0].house_profit || 0),
         totalWins: parseInt(betsRes.rows[0].total_wins),
       },
+      daily: {
+        total: parseInt(dailyBetsRes.rows[0].total_bets),
+        totalWagered: parseFloat(dailyBetsRes.rows[0].total_wagered || 0),
+        houseProfit: parseFloat(dailyBetsRes.rows[0].house_profit || 0),
+        totalWins: parseInt(dailyBetsRes.rows[0].total_wins),
+      },
       deposits: depositRes.rows,
       pendingWithdrawals: parseInt(withdrawalRes.rows[0].pending),
     });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Reset PnL (deletes all bet records) ─────────────────────────────────────
+router.post("/stats/reset", async (req, res) => {
+  try {
+    const result = await req.db.query("DELETE FROM bets");
+    return res.json({ success: true, deletedBets: result.rowCount });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

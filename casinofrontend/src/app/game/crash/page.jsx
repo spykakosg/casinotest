@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import CrashGraph from "@/components/CrashGraph";
 import { useCrash } from "@/hooks/useCrash";
 import { getBalances, getCrashBetHistory } from "@/lib/api";
+import * as BC from "@/lib/betConfig";
 
 const CURRENCIES = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
 const CCY_SHORT  = { USDT_POLYGON: "USDT", ETH_POLYGON: "ETH", USDT_TRON: "USDT₮", BTC: "BTC" };
@@ -23,7 +24,7 @@ export default function CrashPage() {
   } = useCrash(token);
 
   const [currency, setCurrency]           = useState("USDT_POLYGON");
-  const [betAmount, setBetAmount]         = useState("10");
+  const [betAmount, setBetAmount]         = useState("1");
   const [autoCashout, setAutoCashout]     = useState("2.00");
   const [autoCashoutOn, setAutoCashoutOn] = useState(false);
   const [balances, setBalances]           = useState({});
@@ -67,9 +68,8 @@ export default function CrashPage() {
   }
 
   // Keep ref in sync with state for use inside effects
-  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
-  const betDecimals = isCrypto ? 8 : 3;
-  const minBetCrash = isCrypto ? 0.00000001 : 0.001;
+  useEffect(() => { BC.fetchPrices(); }, []);
+  useEffect(() => { setBetAmount(BC.defaultBet(currency)); }, [currency]);
 
   useEffect(() => {
     autoplayRef.current = { active: autoplayActive, mode: autoplayMode, left: autoplayLeft };
@@ -251,16 +251,16 @@ export default function CrashPage() {
                   Bet Amount
                 </label>
                 <input
-                  type="number" min={minBetCrash} step={minBetCrash}
+                  type="number" min={BC.minBet(currency)} step={BC.stepSize(currency)}
                   value={betAmount}
                   onChange={e => setBetAmount(e.target.value)}
                   disabled={alreadyIn || autoplayActive}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold transition-colors disabled:opacity-40"
                 />
                 <div className="flex gap-1 mt-1">
-                  {[["½", () => setBetAmount(v => Math.max(minBetCrash, parseFloat(v)/2).toFixed(betDecimals))],
-                    ["2×", () => setBetAmount(v => (parseFloat(v)*2).toFixed(betDecimals))],
-                    ["Max", () => setBetAmount((balances[currency]||0).toFixed(betDecimals))]
+                  {[["½", () => setBetAmount(v => BC.halfBet(v, currency))],
+                    ["2×", () => setBetAmount(v => BC.doubleBet(v, currency))],
+                    ["Max", () => setBetAmount(BC.maxBetAmount(currency, balances[currency]))]
                   ].map(([l, fn]) => (
                     <button key={l} onClick={fn} disabled={alreadyIn || autoplayActive}
                       className="flex-1 bg-casino-surface border border-casino-border rounded py-1 text-xs font-mono text-casino-muted hover:text-white transition-colors disabled:opacity-40">

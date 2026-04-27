@@ -231,6 +231,14 @@ export async function adminCreditUser(id, currency, amount) {
   });
 }
 
+export async function adminResetPnl() {
+  return request("/api/admin/stats/reset", { method: "POST" });
+}
+
+export async function getPrices() {
+  return request("/api/prices");
+}
+
 export async function adminGetPendingWithdrawals() {
   return request("/api/admin/withdrawals/pending");
 }

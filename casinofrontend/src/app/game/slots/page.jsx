@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import BetHistory from "@/components/BetHistory";
 import { placeSlotsBet, getBalances, getSlotsBetHistory } from "@/lib/api";
+import * as BC from "@/lib/betConfig";
 
 const CURRENCIES = ["USDT_POLYGON", "ETH_POLYGON", "USDT_TRON", "BTC"];
 
@@ -53,7 +54,7 @@ export default function SlotsPage() {
   const router = useRouter();
 
   const [currency, setCurrency]   = useState("USDT_POLYGON");
-  const [betAmount, setBetAmount] = useState("10");
+  const [betAmount, setBetAmount] = useState("1");
   const [spinning, setSpinning]   = useState(false);
   const [grid, setGrid]           = useState(null);
   const [result, setResult]       = useState(null);
@@ -127,6 +128,7 @@ export default function SlotsPage() {
         setHistory(prev => [{
           id: bet.betId,
           game: "slots",
+          currency,
           bet_amount: bet.betAmount,
           payout: bet.payout,
           profit: bet.profit,
@@ -142,12 +144,11 @@ export default function SlotsPage() {
     }
   }
 
-  const isCrypto = currency === "BTC" || currency === "ETH_POLYGON";
-  const betDecimals = isCrypto ? 8 : 3;
-  const minBet = isCrypto ? 0.00000001 : 0.001;
-  function halfBet()   { setBetAmount(v => Math.max(minBet, parseFloat(v) / 2).toFixed(betDecimals)); }
-  function doubleBet() { setBetAmount(v => (parseFloat(v) * 2).toFixed(betDecimals)); }
-  function maxBet()    { setBetAmount((balances[currency] || 0).toFixed(betDecimals)); }
+  useEffect(() => { BC.fetchPrices(); }, []);
+  useEffect(() => { setBetAmount(BC.defaultBet(currency)); }, [currency]);
+  function halfBet()   { setBetAmount(v => BC.halfBet(v, currency)); }
+  function doubleBet() { setBetAmount(v => BC.doubleBet(v, currency)); }
+  function maxBet()    { setBetAmount(BC.maxBetAmount(currency, balances[currency])); }
 
   if (authLoading) return <LoadingScreen />;
 
@@ -275,7 +276,7 @@ export default function SlotsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <span className="text-xs text-casino-muted font-mono uppercase tracking-widest">Bet Amount</span>
-                <input type="number" value={betAmount} onChange={e => setBetAmount(e.target.value)}
+                <input type="number" min={BC.minBet(currency)} step={BC.stepSize(currency)} value={betAmount} onChange={e => setBetAmount(e.target.value)}
                   className="w-full bg-casino-surface border border-casino-border rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-gold/50" />
                 <div className="flex gap-1">
                   <button onClick={halfBet} className="flex-1 bg-casino-surface border border-casino-border rounded px-2 py-1 text-xs text-casino-muted hover:text-white transition-colors">1/2</button>

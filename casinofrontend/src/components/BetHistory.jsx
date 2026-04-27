@@ -44,7 +44,10 @@ function BetRow({ bet }) {
   const roll = typeof bet.roll === "number" ? bet.roll : parseFloat(bet.roll);
   const isPush = Math.abs(profit) < 0.0001;
   const isWin = profit > 0.0001;
-  function fmt(v) { return v.toFixed(5); }
+  const ccy = bet.currency || "";
+  const isCrypto = ccy === "BTC" || ccy === "ETH_POLYGON";
+  const dec = isCrypto ? 10 : 5;
+  function fmt(v) { return v.toFixed(dec); }
   return (
     <div className={`px-4 py-3 flex items-center gap-3 hover:bg-casino-surface/50 transition-colors ${
       isWin ? "border-l-2 border-green-500/40" : isPush ? "border-l-2 border-yellow-500/30" : "border-l-2 border-red-500/20"
@@ -68,7 +71,7 @@ function BetRow({ bet }) {
       <div className={`text-xs font-mono font-semibold shrink-0 ${
         isWin ? "text-green-400" : isPush ? "text-yellow-400" : "text-red-400"
       }`}>
-        {isPush ? "0.00" : isWin ? `+${fmt(profit)}` : fmt(profit)}
+        {isPush ? fmt(0) : isWin ? `+${fmt(profit)}` : fmt(profit)}
       </div>
     </div>
   );

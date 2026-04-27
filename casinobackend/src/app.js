@@ -44,6 +44,23 @@ app.use("/api/crash",  genLimiter,  crashRouter);
 app.use("/api/blackjack", betLimiter, blackjackRouter);
 app.use("/api/mines", betLimiter, minesRouter);
 
+// ─── Prices (cached, for max bet conversion) ─────────────────────────────────
+let priceCache = { btc: 0, eth: 0, updatedAt: 0 };
+app.get("/api/prices", async (_req, res) => {
+  const now = Date.now();
+  if (now - priceCache.updatedAt < 60_000 && priceCache.btc > 0) {
+    return res.json(priceCache);
+  }
+  try {
+    const resp = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd");
+    const data = await resp.json();
+    priceCache = { btc: data.bitcoin.usd, eth: data.ethereum.usd, updatedAt: now };
+    return res.json(priceCache);
+  } catch {
+    return res.json(priceCache);
+  }
+});
+
 // ─── Health ───────────────────────────────────────────────────────────────────
 app.get("/health", async (_req, res) => {
   try { await pool.query("SELECT 1"); res.json({ status: "ok", db: "connected" }); }
