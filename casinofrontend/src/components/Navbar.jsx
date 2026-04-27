@@ -21,6 +21,8 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
   }
 
   const balance = balances[activeCurrency] ?? 0;
+  const isCrypto = activeCurrency === "BTC" || activeCurrency === "ETH_POLYGON";
+  const balanceDecimals = isCrypto ? 10 : 5;
 
   return (
     <header className="border-b border-casino-border bg-casino-surface/80 backdrop-blur-sm sticky top-0 z-50">
@@ -35,7 +37,16 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
         <nav className="hidden md:flex items-center gap-1">
           <NavLink href="/game/dice" active={pathname === "/game/dice"}>🎲 Dice</NavLink>
           <NavLink href="/game/crash" active={pathname === "/game/crash"}>🚀 Crash</NavLink>
+          <NavLink href="/game/roulette" active={pathname === "/game/roulette"}>🎰 Roulette</NavLink>
+          <NavLink href="/game/blackjack" active={pathname === "/game/blackjack"}>🃏 Blackjack</NavLink>
+          <NavLink href="/game/plinko" active={pathname === "/game/plinko"}>📍 Plinko</NavLink>
+          <NavLink href="/game/mines" active={pathname === "/game/mines"}>💣 Mines</NavLink>
+          <NavLink href="/game/limbo" active={pathname === "/game/limbo"}>🎯 Limbo</NavLink>
+          <NavLink href="/game/slots" active={pathname === "/game/slots"}>🎰 Slots</NavLink>
           <NavLink href="/wallet" active={pathname === "/wallet"}>💼 Wallet</NavLink>
+          {user?.role === "admin" && (
+            <NavLink href="/admin" active={pathname === "/admin"}>🛡️ Admin</NavLink>
+          )}
         </nav>
 
         {/* Right side */}
@@ -52,7 +63,7 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
               ))}
             </select>
             <span className="text-white font-mono text-sm font-medium">
-              {balance.toFixed(2)}
+              {balance.toFixed(balanceDecimals)}
             </span>
           </div>
 
@@ -75,7 +86,16 @@ export default function Navbar({ balances = {}, activeCurrency, onCurrencyChange
       <div className="md:hidden flex border-t border-casino-border">
         <MobileNavLink href="/game/dice" active={pathname === "/game/dice"}>🎲 Dice</MobileNavLink>
         <MobileNavLink href="/game/crash" active={pathname === "/game/crash"}>🚀 Crash</MobileNavLink>
+        <MobileNavLink href="/game/roulette" active={pathname === "/game/roulette"}>🎰 Roulette</MobileNavLink>
+        <MobileNavLink href="/game/blackjack" active={pathname === "/game/blackjack"}>🃏 Blackjack</MobileNavLink>
+        <MobileNavLink href="/game/plinko" active={pathname === "/game/plinko"}>📍 Plinko</MobileNavLink>
+        <MobileNavLink href="/game/mines" active={pathname === "/game/mines"}>💣 Mines</MobileNavLink>
+        <MobileNavLink href="/game/limbo" active={pathname === "/game/limbo"}>🎯 Limbo</MobileNavLink>
+        <MobileNavLink href="/game/slots" active={pathname === "/game/slots"}>🎰 Slots</MobileNavLink>
         <MobileNavLink href="/wallet" active={pathname === "/wallet"}>💼 Wallet</MobileNavLink>
+        {user?.role === "admin" && (
+          <MobileNavLink href="/admin" active={pathname === "/admin"}>🛡️ Admin</MobileNavLink>
+        )}
       </div>
     </header>
   );

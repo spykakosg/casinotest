@@ -109,3 +109,143 @@ export async function getWithdrawalHistory() {
 export async function getCrashBetHistory(limit = 20, offset = 0) {
   return request(`/api/crash/my-bets?limit=${limit}&offset=${offset}`);
 }
+
+// ─── Roulette ─────────────────────────────────────────────────────────────────
+export async function placeRouletteBet({ currency, betAmount, betType, betValue }) {
+  return request("/api/games/roulette/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, betType, betValue }),
+  });
+}
+
+export async function getRouletteBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=roulette`);
+}
+
+// ─── Blackjack ────────────────────────────────────────────────────────────────
+export async function blackjackDeal({ currency, betAmount }) {
+  return request("/api/blackjack/deal", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount }),
+  });
+}
+
+export async function blackjackAction({ gameId, action }) {
+  return request("/api/blackjack/action", {
+    method: "POST",
+    body: JSON.stringify({ gameId, action }),
+  });
+}
+
+export async function getBlackjackBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=blackjack`);
+}
+
+// ─── Plinko ───────────────────────────────────────────────────────────────────
+export async function placePlinkoBet({ currency, betAmount, rows, risk }) {
+  return request("/api/games/plinko/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, rows, risk }),
+  });
+}
+
+export async function getPlinkoBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=plinko`);
+}
+
+// ─── Mines ────────────────────────────────────────────────────────────────────
+export async function minesStart({ currency, betAmount, mineCount }) {
+  return request("/api/mines/start", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, mineCount }),
+  });
+}
+
+export async function minesReveal({ gameId, tileIndex }) {
+  return request("/api/mines/reveal", {
+    method: "POST",
+    body: JSON.stringify({ gameId, tileIndex }),
+  });
+}
+
+export async function minesCashout({ gameId }) {
+  return request("/api/mines/cashout", {
+    method: "POST",
+    body: JSON.stringify({ gameId }),
+  });
+}
+
+export async function getMinesBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=mines`);
+}
+
+// ─── Limbo ────────────────────────────────────────────────────────────────────
+export async function placeLimboBet({ currency, betAmount, target }) {
+  return request("/api/games/limbo/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount, target }),
+  });
+}
+
+export async function getLimboBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=limbo`);
+}
+
+// ─── Slots ────────────────────────────────────────────────────────────────────
+export async function placeSlotsBet({ currency, betAmount }) {
+  return request("/api/games/slots/bet", {
+    method: "POST",
+    body: JSON.stringify({ currency, betAmount }),
+  });
+}
+
+export async function getSlotsBetHistory(limit = 20, offset = 0) {
+  return request(`/api/games/bets?limit=${limit}&offset=${offset}&game=slots`);
+}
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export async function adminGetStats() {
+  return request("/api/admin/stats");
+}
+
+export async function adminGetUsers(limit = 50, offset = 0, search = "") {
+  const q = search ? `&search=${encodeURIComponent(search)}` : "";
+  return request(`/api/admin/users?limit=${limit}&offset=${offset}${q}`);
+}
+
+export async function adminGetUser(id) {
+  return request(`/api/admin/users/${id}`);
+}
+
+export async function adminBanUser(id, banned) {
+  return request(`/api/admin/users/${id}/ban`, {
+    method: "PUT",
+    body: JSON.stringify({ banned }),
+  });
+}
+
+export async function adminCreditUser(id, currency, amount) {
+  return request(`/api/admin/users/${id}/credit`, {
+    method: "PUT",
+    body: JSON.stringify({ currency, amount }),
+  });
+}
+
+export async function adminResetPnl() {
+  return request("/api/admin/stats/reset", { method: "POST" });
+}
+
+export async function getPrices() {
+  return request("/api/prices");
+}
+
+export async function adminGetPendingWithdrawals() {
+  return request("/api/admin/withdrawals/pending");
+}
+
+export async function adminProcessWithdrawal(id, action, txHash) {
+  return request(`/api/admin/withdrawals/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ action, txHash: txHash || undefined }),
+  });
+}
